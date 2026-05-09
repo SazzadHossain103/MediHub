@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/src/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import { Badge } from "@/src/components/ui/badge"
 import {
   Clock,
   CheckCircle,
@@ -21,7 +21,7 @@ import {
   getHospitalById,
   clearLoggedInHospital,
   type Hospital,
-} from "@/lib/mock-data"
+} from "@/src/lib/mock-data"
 
 export default function HospitalStatusPage() {
   const router = useRouter()
@@ -198,8 +198,8 @@ export default function HospitalStatusPage() {
               <div className="text-center text-sm text-muted-foreground">
                 <p>
                   Need help? Contact our support team at{" "}
-                  <a href="mailto:support@medihub.com" className="text-primary hover:underline">
-                    support@medihub.com
+                  <a href="mailto:support@/srcmedihub.com" className="text-primary hover:underline">
+                    support@/srcmedihub.com
                   </a>
                 </p>
               </div>
