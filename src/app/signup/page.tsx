@@ -75,7 +75,7 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/signup', {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export default function SignupPage() {
       // Redirect
       // const verifyUrl = `/verify?email=${encodeURIComponent(formData.email)}`;
       setOtpEmail(formData.email);
-      const verifyUrl = `/verify`;
+      const verifyUrl = `/verify-email`;
       // window.location.href = '/verify';
       router.push(verifyUrl);
 

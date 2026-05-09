@@ -45,6 +45,7 @@ import {
   type Patient,
   type Hospital,
 } from "@/src/lib/mock-data"
+import { useAuthStore } from "../../../store/useAuthStore"
 
 export default function AdminDashboardPage() {
   const router = useRouter()
@@ -53,6 +54,7 @@ export default function AdminDashboardPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ type: "patient" | "hospital"; id: string; name: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { logout } = useAuthStore()
 
   // Load data on mount
   useEffect(() => {
@@ -72,9 +74,19 @@ export default function AdminDashboardPage() {
     setIsLoading(false)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("medihub_admin_logged_in")
-    router.push("/admin/login")
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/adminLogout", {
+      method: "POST",
+      credentials: "include", // 🔥 VERY IMPORTANT
+    });
+      logout();            // 🔥 clear Zustand (client)
+
+      localStorage.removeItem("medihub_admin_logged_in")
+      router.push("/admin/login")
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   }
 
   const openDeleteDialog = (type: "patient" | "hospital", id: string, name: string) => {

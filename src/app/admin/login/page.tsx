@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { Shield, AlertCircle } from "lucide-react"
 import { ADMIN_CREDENTIALS } from "@/src/lib/mock-data"
-import { useAuthStore } from './../../store/useAuthStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -21,6 +21,7 @@ export default function AdminLoginPage() {
   })
   const [error, setError] = useState("")
   const {setOtpEmail} = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

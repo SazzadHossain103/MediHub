@@ -6,7 +6,7 @@ const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || "").replace(
   ""
 );
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || "MediHub";
-const OTP_SUBJECT = "MediHub Email Verification OTP";
+const OTP_SUBJECT = "MediHub Account Verification OTP";
 
 const transporter = GMAIL_USER && GMAIL_APP_PASSWORD
   ? nodemailer.createTransport({
