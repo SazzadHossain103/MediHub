@@ -89,18 +89,6 @@ export default function AdminLoginPage() {
       }
 };
 
-  // const handleDemoLogin = () => {
-  //   setFormData({
-  //     email: ADMIN_CREDENTIALS.email,
-  //     password: ADMIN_CREDENTIALS.password,
-  //   })
-    
-  //   // Auto-submit after filling credentials
-  //   if (typeof window !== "undefined") {
-  //     localStorage.setItem("medihub_admin_logged_in", "true")
-  //   }
-  //   router.push("/admin/dashboard")
-  // }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -172,41 +160,7 @@ export default function AdminLoginPage() {
             </form>
           </CardContent>
         </Card>
-
-        {/* Demo Login Card */}
-        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Demo Credentials</CardTitle>
-            <CardDescription>
-              Use these credentials to test the admin dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm space-y-1 mb-4">
-              <p>
-                <span className="text-muted-foreground">Email:</span>{" "}
-                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">
-                  {ADMIN_CREDENTIALS.email}
-                </code>
-              </p>
-              <p>
-                <span className="text-muted-foreground">Password:</span>{" "}
-                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">
-                  {ADMIN_CREDENTIALS.password}
-                </code>
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              // onClick={handleDemoLogin}
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              Login with Demo Credentials
-            </Button>
-          </CardContent>
-        </Card>
+      
       </div>
     </div>
   )

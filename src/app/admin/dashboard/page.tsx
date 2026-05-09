@@ -59,11 +59,11 @@ export default function AdminDashboardPage() {
   // Load data on mount
   useEffect(() => {
     // Check if admin is logged in
-    const isLoggedIn = localStorage.getItem("medihub_admin_logged_in")
-    if (!isLoggedIn) {
-      router.push("/admin/login")
-      return
-    }
+    // const isLoggedIn = localStorage.getItem("medihub_admin_logged_in")
+    // if (!isLoggedIn) {
+    //   router.push("/admin/login")
+    //   return
+    // }
 
     loadData()
   }, [router])
