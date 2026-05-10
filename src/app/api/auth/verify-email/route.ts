@@ -57,33 +57,33 @@ export async function POST(req: NextRequest) {
 
     await user.save();
 
-    // 🧠 Token logic (role-based)
-    let token;
+    // // 🧠 Token logic (role-based)
+    // let token;
 
-    if (user.role === "patient") {
-      // Patient → auto login after verify
-      token = signToken({
-        sub: user._id.toString(),
-        role: user.role,
-      });
-    } else {
-      // Hospital / Doctor / Nurse → need approval
-      if (user.approvalStatus === "approved") {
-        token = signToken({
-          sub: user._id.toString(),
-          role: user.role,
-          hospitalId: user.hospitalId?.toString(),
-          isPrimaryAdmin: user.isPrimaryAdmin,
-        });
-      }
-    }
+    // if (user.role === "patient") {
+    //   // Patient → auto login after verify
+    //   token = signToken({
+    //     sub: user._id.toString(),
+    //     role: user.role,
+    //   });
+    // } else {
+    //   // Hospital / Doctor / Nurse → need approval
+    //   if (user.approvalStatus === "approved") {
+    //     token = signToken({
+    //       sub: user._id.toString(),
+    //       role: user.role,
+    //       hospitalId: user.hospitalId?.toString(),
+    //       isPrimaryAdmin: user.isPrimaryAdmin,
+    //     });
+    //   }
+    // }
 
     return NextResponse.json({
       success: true,
       message: "Email verified successfully",
       role: user.role,
-      approvalStatus: user.approvalStatus || "approved",
-      token,
+      // approvalStatus: user.approvalStatus || "approved",
+      // token,
     });
 
   } catch (error: any) {

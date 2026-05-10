@@ -21,6 +21,7 @@ export default function LocationPickerMap({
 }: LocationPickerMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
+  const isInitializingRef = useRef(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isLocating, setIsLocating] = useState(false)
   const [currentLocation, setCurrentLocation] = useState({
@@ -31,59 +32,72 @@ export default function LocationPickerMap({
   // Initialize map only once
   useEffect(() => {
     const initMap = async () => {
-      if (!mapContainerRef.current || mapRef.current) return
+      const container = mapContainerRef.current
+      if (!container || mapRef.current || isInitializingRef.current) return
 
-      const L = (await import("leaflet")).default
-      await import("leaflet/dist/leaflet.css")
+      isInitializingRef.current = true
+      try {
+        const leafletModule = await import("leaflet")
+        const L = (leafletModule as any).default ?? leafletModule
+        // @ts-ignore: CSS module import for Leaflet styles
+        await import("leaflet/dist/leaflet.css")
 
-      const map = L.map(mapContainerRef.current, {
-        center: [currentLocation.lat, currentLocation.lng],
-        zoom: DEFAULT_ZOOM,
-        zoomControl: true,
-        attributionControl: true,
-        dragging: interactive,
-        touchZoom: interactive,
-        scrollWheelZoom: interactive,
-        doubleClickZoom: true,
-        boxZoom: interactive,
-        keyboard: interactive,
-      })
+        if ((container as any)._leaflet_id) {
+          container.innerHTML = ""
+          delete (container as any)._leaflet_id
+        }
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map)
-
-      if (interactive) {
-        map.on("moveend", () => {
-          const center = map.getCenter()
-          setCurrentLocation({ lat: center.lat, lng: center.lng })
-          onLocationChange?.(center.lat, center.lng)
+        const map = L.map(container, {
+          center: [currentLocation.lat, currentLocation.lng],
+          zoom: DEFAULT_ZOOM,
+          zoomControl: true,
+          attributionControl: true,
+          dragging: interactive,
+          touchZoom: interactive,
+          scrollWheelZoom: interactive,
+          doubleClickZoom: true,
+          boxZoom: interactive,
+          keyboard: interactive,
         })
-      }
 
-      mapRef.current = map
-      setIsLoaded(true)
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+        }).addTo(map)
 
-      if (interactive && !initialLat && !initialLng && navigator.geolocation) {
-        setIsLocating(true)
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords
-            map.setView([latitude, longitude], DEFAULT_ZOOM)
-            setCurrentLocation({ lat: latitude, lng: longitude })
-            onLocationChange?.(latitude, longitude)
-            setIsLocating(false)
-          },
-          () => {
-            setIsLocating(false)
-            onLocationChange?.(currentLocation.lat, currentLocation.lng)
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        )
-      } else if (interactive) {
-        onLocationChange?.(currentLocation.lat, currentLocation.lng)
+        if (interactive) {
+          map.on("moveend", () => {
+            const center = map.getCenter()
+            setCurrentLocation({ lat: center.lat, lng: center.lng })
+            onLocationChange?.(center.lat, center.lng)
+          })
+        }
+
+        mapRef.current = map
+        setIsLoaded(true)
+
+        if (interactive && !initialLat && !initialLng && navigator.geolocation) {
+          setIsLocating(true)
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords
+              map.setView([latitude, longitude], DEFAULT_ZOOM)
+              setCurrentLocation({ lat: latitude, lng: longitude })
+              onLocationChange?.(latitude, longitude)
+              setIsLocating(false)
+            },
+            () => {
+              setIsLocating(false)
+              onLocationChange?.(currentLocation.lat, currentLocation.lng)
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          )
+        } else if (interactive) {
+          onLocationChange?.(currentLocation.lat, currentLocation.lng)
+        }
+      } finally {
+        isInitializingRef.current = false
       }
     }
 
@@ -93,6 +107,9 @@ export default function LocationPickerMap({
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
+      } else if (mapContainerRef.current) {
+        mapContainerRef.current.innerHTML = ""
+        delete (mapContainerRef.current as any)._leaflet_id
       }
     }
   }, []) // <-- empty array, runs only once

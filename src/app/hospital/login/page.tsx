@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/src/components/ui/select"
 import { Building2 } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
+import loginApiCall from "@/src/utils/loginApiCall"
 
 // Demo hospitals list
 const demoHospitals = [
@@ -26,6 +28,9 @@ const demoHospitals = [
 
 export default function HospitalLoginPage() {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { setOtpEmail } = useAuthStore();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -37,18 +42,47 @@ export default function HospitalLoginPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    router.push(`/hospital/${selectedHospital}`)
+    try {
+      setError("");
+
+      if (!formData.email || !formData.password) {
+        setError("Please fill in all fields");
+        return;
+      }
+
+      setIsLoading(true);
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email : formData.email ,
+          password : formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      console.log("Login successful:", data);
+
+      setOtpEmail(formData.email);
+
+      router.push("/verify-login");
+    } catch (error: any) {
+      setError(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  const handleDemoLogin = (hospitalId: string) => {
-    setFormData({
-      email: "hospital@example.com",
-      password: "123456",
-    })
-    router.push(`/hospital/${hospitalId}`)
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -72,21 +106,6 @@ export default function HospitalLoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* <div className="space-y-2">
-                <Label htmlFor="hospital">Select Hospital</Label>
-                <Select value={selectedHospital} onValueChange={setSelectedHospital}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a hospital" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {demoHospitals.map((hospital) => (
-                      <SelectItem key={hospital.id} value={hospital.id}>
-                        {hospital.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div> */}
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -114,8 +133,8 @@ export default function HospitalLoginPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                Login
+              <Button disabled={isLoading} type="submit" className="w-full">
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
@@ -128,41 +147,6 @@ export default function HospitalLoginPage() {
           </CardContent>
         </Card>
 
-        {/* Demo Login Card */}
-        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Demo Login</CardTitle>
-            <CardDescription>
-              Quick access to demo hospital dashboards
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm space-y-1 mb-4">
-              <p>
-                <span className="text-muted-foreground">Email:</span>{" "}
-                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">hospital@example.com</code>
-              </p>
-              <p>
-                <span className="text-muted-foreground">Password:</span>{" "}
-                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">123456</code>
-              </p>
-            </div>
-            {/* <div className="space-y-2">
-              {demoHospitals.map((hospital) => (
-                <Button
-                  key={hospital.id}
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => handleDemoLogin(hospital.id)}
-                >
-                  <Building2 className="mr-2 h-4 w-4" />
-                  {hospital.name}
-                </Button>
-              ))}
-            </div> */}
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

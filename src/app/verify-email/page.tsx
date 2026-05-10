@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "./../../store/useAuthStore";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   // const prefillEmail = searchParams.get("email") ?? "";
   // const [email, setEmail] = useState("");
 
@@ -27,7 +26,7 @@ export default function VerifyEmailPage() {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:3000/api/auth/verify-email", {
+      const res = await fetch("/api/auth/verify-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,8 +52,10 @@ export default function VerifyEmailPage() {
         role: data.role,
       });
 
-
-      router.push("/patient");
+      if (data.role === "hospital") {
+        router.push("/hospital/login");
+      }
+      else router.push("/login");
 
 
     } catch (err: any) {

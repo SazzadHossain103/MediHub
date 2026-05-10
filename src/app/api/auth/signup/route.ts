@@ -47,9 +47,11 @@ export async function POST(req: NextRequest) {
 
     const { name, email, password, role } = await req.json();
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({$or: [{ email }, { role }]});
+    console.log("Existing user:", existingUser);
+    console.log("Requested role:", role);
 
-    if (existingUser) {
+    if (existingUser && existingUser.role === role) {
       return NextResponse.json(
         { error: "User already exists" },
         { status: 400 }

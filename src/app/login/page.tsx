@@ -47,15 +47,6 @@ export default function LoginPage() {
 
       console.log("Login successful:", data);
 
-
-      // ✅ Role-based redirect
-      // const role = data.user.role;
-
-      // if (role === "patient") router.push("/patient");
-      // else if (role === "doctor") router.push("/doctor");
-      // else if (role === "nurse") router.push("/nurse");
-      // else if (role === "hospital") router.push("/hospital");
-      // else router.push("/");
       setOtpEmail(email);
       router.push("/verify-login");
       

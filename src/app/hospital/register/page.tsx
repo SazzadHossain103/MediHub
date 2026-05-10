@@ -10,7 +10,8 @@ import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Upload } from "lucide-react"
-import { registerHospital } from "@/src/lib/mock-data"
+import { Alert, AlertDescription } from "@/src/components/ui/alert"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 // Dynamically import map component to avoid SSR issues
 const LocationPickerMap = dynamic(() => import("@/src/components/location-picker-map"), {
@@ -37,6 +38,11 @@ export default function HospitalRegistrationPage() {
     password: "",
   })
   const [location, setLocation] = useState({ lat: 23.8103, lng: 90.4125 })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const { setUser} = useAuthStore()
+  const { setOtpEmail } = useAuthStore();
 
   const handleLocationChange = useCallback((lat: number, lng: number) => {
     setLocation({ lat, lng })
@@ -52,20 +58,67 @@ export default function HospitalRegistrationPage() {
     setFormData((prev) => ({ ...prev, licenseDocument: file }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Register hospital with mock data store
-    registerHospital({
-      name: formData.hospitalName,
-      email: formData.email,
-      licenseNumber: formData.licenseNumber,
-      address: formData.address,
-      phone: formData.phone,
-      location: location,
-    })
-    
-    router.push("/hospital/login")
+    setIsLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      // Prepare form data for API
+      const submitData = new FormData()
+      submitData.append("hospitalName", formData.hospitalName)
+      submitData.append("email", formData.email)
+      submitData.append("password", formData.password)
+      submitData.append("licenseNumber", formData.licenseNumber)
+      submitData.append("address", formData.address)
+      submitData.append("phone", formData.phone)
+      submitData.append("location", JSON.stringify(location))
+
+      if (formData.licenseDocument) {
+        submitData.append("licenseDocument", formData.licenseDocument)
+      }
+
+      const response = await fetch("/api/hospital/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: formData.hospitalName,
+          email: formData.email,
+          password: formData.password,
+          licenseNumber: formData.licenseNumber,
+          address: formData.address,
+          phone: formData.phone,
+          location,
+          licenseDocument: formData.licenseDocument?.name || null,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed")
+      }
+
+      setUser({
+        id: "temp", // better: return from backend or decode JWT
+        email: formData.email,
+        role: "hospital",
+      })
+      setOtpEmail(formData.email);
+
+      setSuccess(data.message || "Registration successful!")
+      setTimeout(() => {
+        router.push("/verify-email")
+      }, 2000)
+
+    } catch (error: any) {
+      setError(error.message || "An error occurred during registration")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -79,6 +132,7 @@ export default function HospitalRegistrationPage() {
               width={140}
               height={40}
               className="h-10 w-auto"
+              style={{ width: "auto" }}
             />
           </Link>
           <CardTitle className="text-2xl">Hospital Registration</CardTitle>
@@ -87,6 +141,16 @@ export default function HospitalRegistrationPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {success && (
+            <Alert className="mb-4">
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="hospitalName">Hospital Name</Label>
@@ -163,13 +227,13 @@ export default function HospitalRegistrationPage() {
               </div>
             </div>
 
-            {/* <div className="space-y-2">
+            <div className="space-y-2">
               <Label>Hospital Location</Label>
               <LocationPickerMap onLocationChange={handleLocationChange} />
               <p className="text-xs text-muted-foreground">
                 Move the map to position the pin at your hospital location
               </p>
-            </div> */}
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -197,8 +261,8 @@ export default function HospitalRegistrationPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              Register Hospital
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Registering..." : "Register Hospital"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
