@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import L from "leaflet"
-
 import "leaflet/dist/leaflet.css"
 import { Card } from "@/src/components/ui/card"
 import { Button } from "@/src/components/ui/button"
@@ -121,9 +119,9 @@ export function HospitalMap({ onSelectHospital, selectedHospitalId }: HospitalMa
   const [locationError, setLocationError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hospitals, setHospitals] = useState<Hospital[]>([])
-  const mapRef = useRef<L.Map | null>(null)
+  const mapRef = useRef<any>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const markersRef = useRef<L.Marker[]>([])
+  const markersRef = useRef<any[]>([])
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -157,87 +155,93 @@ export function HospitalMap({ onSelectHospital, selectedHospitalId }: HospitalMa
   useEffect(() => {
     if (!location || !mapContainerRef.current) return
 
-    // Clean up existing map
-    if (mapRef.current) {
-      mapRef.current.remove()
-      mapRef.current = null
-    }
+    // Dynamically import leaflet on client side only
+    import("leaflet").then((leafletModule) => {
+      const L = leafletModule.default
 
-    // Initialize map
-    const map = L.map(mapContainerRef.current).setView([location.lat, location.lng], 13)
-    mapRef.current = map
+      // Clean up existing map
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
 
-    // Add tile layer with a clean, medical-friendly style
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map)
+      // Initialize map
+      if (!mapContainerRef.current) return
+      const map = L.map(mapContainerRef.current).setView([location.lat, location.lng], 13)
+      mapRef.current = map
 
-    // Custom icons
-    const userIcon = L.divIcon({
-      html: `<div class="flex items-center justify-center w-8 h-8 bg-primary rounded-full border-2 border-white shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-        </svg>
-      </div>`,
-      className: "",
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-    })
+      // Add tile layer with a clean, medical-friendly style
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(map)
 
-    const hospitalIcon = (isSelected: boolean, queueSize: number) => {
-      const bgColor = queueSize > 15 ? "#ef4444" : queueSize > 8 ? "#f59e0b" : "#22c55e"
-      const borderColor = isSelected ? "#2563eb" : "white"
-      const borderWidth = isSelected ? "3" : "2"
-      
-      return L.divIcon({
-        html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-${borderWidth} shadow-lg" style="background-color: ${bgColor}; border-color: ${borderColor}; border-width: ${borderWidth}px;">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 21h18M9 8h6M12 8v6M9 14h6M6 21V4a2 2 0 012-2h8a2 2 0 012 2v17"/>
+      // Custom icons
+      const userIcon = L.divIcon({
+        html: `<div class="flex items-center justify-center w-8 h-8 bg-primary rounded-full border-2 border-white shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
           </svg>
         </div>`,
         className: "",
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
       })
-    }
 
-    // Add user marker
-    L.marker([location.lat, location.lng], { icon: userIcon })
-      .addTo(map)
-      .bindPopup("<b>Your Location</b>")
+      const hospitalIcon = (isSelected: boolean, queueSize: number) => {
+        const bgColor = queueSize > 15 ? "#ef4444" : queueSize > 8 ? "#f59e0b" : "#22c55e"
+        const borderColor = isSelected ? "#2563eb" : "white"
+        const borderWidth = isSelected ? "3" : "2"
+        
+        return L.divIcon({
+          html: `<div class="flex items-center justify-center w-10 h-10 rounded-full border-${borderWidth} shadow-lg" style="background-color: ${bgColor}; border-color: ${borderColor}; border-width: ${borderWidth}px;">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 21h18M9 8h6M12 8v6M9 14h6M6 21V4a2 2 0 012-2h8a2 2 0 012 2v17"/>
+            </svg>
+          </div>`,
+          className: "",
+          iconSize: [40, 40],
+          iconAnchor: [20, 40],
+        })
+      }
 
-    // Add hospital markers
-    markersRef.current = hospitals.map((hospital) => {
-      const marker = L.marker([hospital.lat, hospital.lng], {
-        icon: hospitalIcon(hospital.id === selectedHospitalId, hospital.emergencyQueue),
-      })
+      // Add user marker
+      L.marker([location.lat, location.lng], { icon: userIcon })
         .addTo(map)
-        .bindPopup(
-          `<div class="p-2">
-            <h3 class="font-bold text-sm">${hospital.name}</h3>
-            <p class="text-xs text-gray-600">${hospital.address}</p>
-            <div class="mt-2 flex gap-2">
-              <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">${hospital.availableBeds} beds</span>
-              <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${hospital.waitTime}</span>
-            </div>
-          </div>`
-        )
+        .bindPopup("<b>Your Location</b>")
 
-      marker.on("click", () => {
-        if (onSelectHospital) {
-          onSelectHospital(hospital)
-        }
+      // Add hospital markers
+      markersRef.current = hospitals.map((hospital) => {
+        const marker = L.marker([hospital.lat, hospital.lng], {
+          icon: hospitalIcon(hospital.id === selectedHospitalId, hospital.emergencyQueue),
+        })
+          .addTo(map)
+          .bindPopup(
+            `<div class="p-2">
+              <h3 class="font-bold text-sm">${hospital.name}</h3>
+              <p class="text-xs text-gray-600">${hospital.address}</p>
+              <div class="mt-2 flex gap-2">
+                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">${hospital.availableBeds} beds</span>
+                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${hospital.waitTime}</span>
+              </div>
+            </div>`
+          )
+
+        marker.on("click", () => {
+          if (onSelectHospital) {
+            onSelectHospital(hospital)
+          }
+        })
+
+        return marker
       })
 
-      return marker
+      // Fit bounds to show all markers
+      const bounds = L.latLngBounds([
+        [location.lat, location.lng],
+        ...hospitals.map((h) => [h.lat, h.lng] as [number, number]),
+      ])
+      map.fitBounds(bounds, { padding: [50, 50] })
     })
-
-    // Fit bounds to show all markers
-    const bounds = L.latLngBounds([
-      [location.lat, location.lng],
-      ...hospitals.map((h) => [h.lat, h.lng] as [number, number]),
-    ])
-    map.fitBounds(bounds, { padding: [50, 50] })
 
     return () => {
       if (mapRef.current) {
