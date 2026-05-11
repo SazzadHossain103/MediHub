@@ -78,6 +78,7 @@ import {
   Activity,
   Stethoscope,
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 // Types
 interface MedicalTest {
@@ -413,6 +414,32 @@ function SidebarContent({
   activeTab: string
   onTabChange: (tab: string) => void
 }) {
+
+  const router = useRouter()
+
+  const { logout, hospitalToken } = useAuthStore()
+  const handleLogout = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const res = await fetch("/api/hospital/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${hospitalToken}`,
+        },
+        credentials: "include", // 🔥 VERY IMPORTANT
+      });
+      if (!res.ok) {
+        console.error("Logout failed with status:", res.status);
+        // return;
+      }
+
+      logout();            // 🔥 clear Zustand (client)
+
+      router.push("/hospital/login") // 🔥 redirect to login page
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
+  }
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b border-border px-6">
@@ -448,13 +475,15 @@ function SidebarContent({
         })}
       </nav>
       <div className="border-t border-border p-4">
-        <Link
-          href="/hospital/login"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+        <Button
+          // href="/hospital/login"
+          variant="outline"
+          onClick={handleLogout}
+          className="flex items-center  gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
         >
           <LogOut className="h-5 w-5" />
           Logout
-        </Link>
+        </Button>
       </div>
     </div>
   )
@@ -466,7 +495,7 @@ export default function HospitalDashboardPage({
   params: Promise<{ hospitalId: string }>
 }) {
   const { hospitalId } = use(params)
-  
+
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("dashboard")
 
@@ -909,11 +938,11 @@ export default function HospitalDashboardPage({
                   <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
                     <AvatarImage src="/placeholder-hospital.jpg" alt={hospitalData.profile.name} />
                     <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
-                      {hospitalData.profile.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                      {user?.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{hospitalData.profile.name}</h1>
+                    <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{user?.name}</h1>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
                       <span>{hospitalData.profile.type}</span>
                       <span>·</span>
@@ -1362,7 +1391,7 @@ export default function HospitalDashboardPage({
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <Label>Hospital Name</Label>
-                      <Input value={hospitalData.profile.name} readOnly className="mt-1" />
+                      <Input value={user?.name} readOnly className="mt-1" />
                     </div>
                     <div>
                       <Label>License Number</Label>
@@ -1374,7 +1403,7 @@ export default function HospitalDashboardPage({
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <Input value={hospitalData.profile.email} readOnly className="mt-1" />
+                      <Input value={user?.email} readOnly className="mt-1" />
                     </div>
                     <div className="md:col-span-2">
                       <Label>Address</Label>
