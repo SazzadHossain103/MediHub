@@ -97,6 +97,9 @@ export function proxy(request: NextRequest) {
   console.log("Middleware tokens:", {
     patientToken,
     adminToken,
+    hospitalToken,
+    doctorToken,
+    nurseToken,
   });
 
   // =========================

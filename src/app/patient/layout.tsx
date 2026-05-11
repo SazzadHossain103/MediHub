@@ -105,7 +105,7 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
-  const { logout } = useAuthStore()
+  const { logout, user } = useAuthStore()
 
   const logoutUser = async () => {
     await fetch("/api/auth/logout", {
@@ -172,10 +172,10 @@ export default function DashboardLayout({
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/placeholder-avatar.jpg" alt="Patient" />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      JD
+                      {user?.name?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden font-medium md:inline-block">John Doe</span>
+                  <span className="hidden font-medium md:inline-block">{user?.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

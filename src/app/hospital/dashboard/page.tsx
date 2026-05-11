@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar"
 import { Progress } from "@/src/components/ui/progress"
 import { ScrollArea } from "@/src/components/ui/scroll-area"
 import { Separator } from "@/src/components/ui/separator"
+import { useAuthStore } from "@/src/store/useAuthStore"
 import {
   Select,
   SelectContent,
@@ -496,7 +497,7 @@ export default function HospitalDashboardPage({
   })
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [uploadingPatientId, setUploadingPatientId] = useState<string | null>(null)
-
+  const { user } = useAuthStore()
   // Computed dashboard stats
   const emergencyQueueCount = hospitalData.emergencyPatients.filter(p => p.status === "in progress").length
   const availableBeds = hospitalData.beds.filter(b => b.status === "Available").length
@@ -724,11 +725,11 @@ export default function HospitalDashboardPage({
             </Button>
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
-              <span className="text-lg font-semibold">{hospitalData.profile.name}</span>
+              <span className="text-lg font-semibold">{user?.name}</span>
             </div>
           </div>
           <Badge variant="outline" className="text-xs">
-            ID: {hospitalId}
+            ID: {user?.id}
           </Badge>
         </header>
 

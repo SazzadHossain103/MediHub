@@ -48,7 +48,8 @@ export default function VerifyEmailPage() {
 
       // ✅ Save user globally
       setUser({
-        id: "data._id", // better: return from backend or decode JWT
+        id: data.id || "temp", // better: return from backend or decode JWT
+        name: data.name || "User",
         email: email!,
         role: data.role,
       });

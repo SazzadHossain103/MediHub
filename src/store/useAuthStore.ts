@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 type User = {
   id: string;
+  name: string;
   email: string;
   role: "patient" | "doctor" | "nurse" | "hospital" | "admin"  | "super_admin";
 };
@@ -12,6 +13,9 @@ type AuthState = {
   user: User | null;
   token: string | null;
   adminToken : string | null;
+  hospitalToken : string | null;
+  doctorToken : string | null;
+  nurseToken : string | null;
   isAuthenticated: boolean;
 
   // OTP flow
@@ -26,6 +30,9 @@ type AuthState = {
   setUser: (user: User) => void;
   setToken: (token: string) => void;
   setAdminToken: (adminToken: string) => void;
+  setHospitalToken: (hospitalToken: string) => void;
+  setDoctorToken: (doctorToken: string) => void;
+  setNurseToken: (nurseToken: string) => void;
   logout: () => void;
 
   setOtpEmail: (email: string) => void;
@@ -41,6 +48,9 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       adminToken: null,
+      hospitalToken: null,
+      doctorToken: null,
+      nurseToken: null,
       isAuthenticated: false,
 
       email: null,
@@ -63,12 +73,26 @@ export const useAuthStore = create<AuthState>()(
         set(() => ({
           adminToken,
         })),
-
+      setHospitalToken: (hospitalToken) =>
+        set(() => ({
+          hospitalToken,
+        })),
+      setDoctorToken: (doctorToken) =>
+        set(() => ({
+          doctorToken,
+        })),
+      setNurseToken: (nurseToken) =>
+        set(() => ({
+          nurseToken,
+        })),
       logout: () =>
         set(() => ({
           user: null,
           token: null,
           adminToken: null,
+          hospitalToken: null,
+          doctorToken: null,
+          nurseToken: null,
           isAuthenticated: false,
           email: null,
           otpStep: "idle",
