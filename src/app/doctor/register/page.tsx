@@ -17,10 +17,12 @@ import {
   SelectValue,
 } from "@/src/components/ui/select"
 import { Upload, User, Briefcase, FileCheck, KeyRound } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 export default function DoctorRegistrationPage() {
   const router = useRouter()
-  
+  const { setOtpEmail } = useAuthStore();
+
   const [formData, setFormData] = useState({
     // Personal Information
     fullName: "",
@@ -59,11 +61,38 @@ export default function DoctorRegistrationPage() {
     setFiles((prev) => ({ ...prev, [name]: file }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Mock registration - redirect to login
-    router.push("/doctor/login")
-  }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(
+        "/api/doctor/register",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message);
+      }
+
+      console.log(data);
+      setOtpEmail(formData.email);
+
+      router.push("/verify-email");
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -92,7 +121,7 @@ export default function DoctorRegistrationPage() {
                   <User className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold text-lg">Personal Information</h3>
                 </div>
-                
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="fullName">Full Name</Label>
@@ -182,7 +211,7 @@ export default function DoctorRegistrationPage() {
                   <Briefcase className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold text-lg">Professional Information</h3>
                 </div>
-                
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="medicalRegNumber">Medical Registration Number</Label>
@@ -268,7 +297,7 @@ export default function DoctorRegistrationPage() {
                   <FileCheck className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold text-lg">Verification Documents</h3>
                 </div>
-                
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Government ID</Label>
@@ -358,7 +387,7 @@ export default function DoctorRegistrationPage() {
                   <KeyRound className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold text-lg">Account Information</h3>
                 </div>
-                
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="accountEmail">Email</Label>

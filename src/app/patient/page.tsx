@@ -1,4 +1,4 @@
-"use client ";
+"use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Badge } from "@/src/components/ui/badge"
@@ -70,6 +70,7 @@ const medications = [
 
 export default function DashboardPage() {
   // const { user } = useAuthStore();
+  const { user } = useAuthStore();
 
   return (
     <div className="space-y-6">
@@ -77,7 +78,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground lg:text-3xl">
-            Welcome back, John
+            Welcome back, {user?.name}
           </h1>
           <p className="text-muted-foreground">
             Here&apos;s an overview of your health dashboard

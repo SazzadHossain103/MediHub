@@ -102,11 +102,11 @@ export default function HospitalRegistrationPage() {
         throw new Error(data.error || "Registration failed")
       }
 
-      setUser({
-        id: "temp", // better: return from backend or decode JWT
-        email: formData.email,
-        role: "hospital",
-      })
+      // setUser({
+      //   id: data.id, // better: return from backend or decode JWT
+      //   email: formData.email,
+      //   role: "hospital",
+      // })
       setOtpEmail(formData.email);
 
       setSuccess(data.message || "Registration successful!")

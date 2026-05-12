@@ -105,12 +105,16 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
-  const { logout, user } = useAuthStore()
+  const { logout, user, token } = useAuthStore()
 
   const logoutUser = async () => {
     await fetch("/api/auth/logout", {
       method: "POST",
+      headers: {
+          Authorization: `Bearer ${token}`,
+        },
       credentials: "include", // 🔥 VERY IMPORTANT
+      
     });
   };
 
