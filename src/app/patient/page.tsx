@@ -69,7 +69,7 @@ const medications = [
 ]
 
 export default function DashboardPage() {
-  // const { user } = useAuthStore();
+
   const { user } = useAuthStore();
 
   return (

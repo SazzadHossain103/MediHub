@@ -16,6 +16,7 @@ import {
   Clock,
   Hash,
 } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 // Mock patient data for today's list
 const mockTodayPatients = [
@@ -33,6 +34,8 @@ const dashboardStats = {
 }
 
 export default function DoctorDashboardPage() {
+  const { user } = useAuthStore();
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -42,7 +45,7 @@ export default function DoctorDashboardPage() {
           Dashboard Overview
         </h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, Dr. Demo User
+          Welcome back, Dr. {user?.name}
         </p>
       </div>
 

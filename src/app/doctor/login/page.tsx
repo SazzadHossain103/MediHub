@@ -10,6 +10,7 @@ import { Label } from "@/src/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { Stethoscope, AlertCircle } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 export default function DoctorLoginPage() {
   const router = useRouter()
@@ -18,6 +19,10 @@ export default function DoctorLoginPage() {
     password: "",
   })
   const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState('');
+  // const router = useRouter();
+  const { setOtpEmail, setUser } = useAuthStore();
 
   // Demo credentials
   const DEMO_EMAIL = "doctor@example.com"
@@ -29,15 +34,44 @@ export default function DoctorLoginPage() {
     setError("")
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    try {
+      setError("");
 
-    // Mock validation with demo credentials
-    if (formData.email === DEMO_EMAIL && formData.password === DEMO_PASSWORD) {
-      localStorage.setItem("medihub_doctor_logged_in", "true")
-      router.push("/doctor/dashboard")
-    } else {
-      setError("Invalid email or password. Try the demo credentials.")
+      if (!formData.email || !formData.password) {
+        setError("Please fill in all fields");
+        return;
+      }
+
+      setIsLoading(true);
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      console.log("Login successful:", data);
+
+      setOtpEmail(formData.email);
+
+      router.push("/verify-login");
+    } catch (error: any) {
+      setError(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -102,8 +136,8 @@ export default function DoctorLoginPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
@@ -117,7 +151,7 @@ export default function DoctorLoginPage() {
         </Card>
 
         {/* Demo Login Card */}
-        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+        {/* <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Demo Login</CardTitle>
             <CardDescription>
@@ -145,7 +179,7 @@ export default function DoctorLoginPage() {
               Login as Demo Doctor
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )
