@@ -1,8 +1,11 @@
+"use client"
 import { Button } from "@/src/components/ui/button"
 import { Badge } from "@/src/components/ui/badge"
 import { Shield, Clock, HeartPulse, ArrowRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function HeroSection() {
+  const router = useRouter()
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-16 md:py-24 lg:py-32">
       {/* Background Pattern */}
@@ -35,13 +38,13 @@ export function HeroSection() {
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button size="lg" className="gap-2 px-8">
+            <Button onClick={()=>router.push("/signup")} size="lg" className="gap-2 px-8">
               Get Started Free
               <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button size="lg" variant="outline" className="px-8">
+            {/* <Button size="lg" variant="outline" className="px-8">
               Watch Demo
-            </Button>
+            </Button> */}
           </div>
 
           {/* Trust Indicators */}
