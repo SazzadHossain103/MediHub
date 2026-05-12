@@ -66,13 +66,13 @@ export async function POST(req: NextRequest) {
     console.log("verification successful, generated token:", token);
 
     // set cookie (if using cookies)
-    res.cookies.set("patientToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/", // 🔥 MUST
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    // res.cookies.set("patientToken", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   sameSite: "strict",
+    //   path: "/", // 🔥 MUST
+    //   maxAge: 60 * 60 * 24 * 7,
+    // });
 
     if (user.role === "patient") {
       res.cookies.set("patientToken", token, {
