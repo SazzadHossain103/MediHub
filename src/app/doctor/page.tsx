@@ -8,9 +8,9 @@ export default function HospitalDashboardRedirect() {
 
   // If the user is not authenticated, redirect to the login page
   if (!user) {
-  redirect("/hospital/login");
+  redirect("/doctor/login");
   }
 
   // If the user is authenticated, redirect to the doctor dashboard
-  redirect("/hospital/dashboard");
+  redirect("/doctor/dashboard");
 }

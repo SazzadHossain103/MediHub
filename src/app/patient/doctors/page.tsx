@@ -95,7 +95,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 15,
     maxSerial: 25,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-man.png",
     verified: true,
   },
   {
@@ -116,7 +116,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 8,
     maxSerial: 20,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-woman.png",
     verified: true,
   },
   {
@@ -137,7 +137,7 @@ const doctorsData = [
     isAvailable: false,
     currentSerial: 20,
     maxSerial: 20,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-man.png",
     verified: true,
   },
   {
@@ -158,7 +158,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 12,
     maxSerial: 30,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-man.png",
     verified: true,
   },
   {
@@ -179,7 +179,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 5,
     maxSerial: 15,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-woman.png",
     verified: false,
   },
   {
@@ -200,7 +200,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 18,
     maxSerial: 35,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-man.png",
     verified: true,
   },
   {
@@ -221,7 +221,7 @@ const doctorsData = [
     isAvailable: false,
     currentSerial: 10,
     maxSerial: 10,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-man.png",
     verified: true,
   },
   {
@@ -242,7 +242,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 7,
     maxSerial: 20,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-woman.png",
     verified: true,
   },
   {
@@ -263,7 +263,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 10,
     maxSerial: 18,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-man.png",
     verified: true,
   },
   {
@@ -284,7 +284,7 @@ const doctorsData = [
     isAvailable: true,
     currentSerial: 22,
     maxSerial: 40,
-    image: "/placeholder.svg?height=200&width=200",
+    image: "/doctors/doctor-woman.png",
     verified: false,
   },
 ]
@@ -421,7 +421,7 @@ export default function DoctorsPage() {
                 {/* Doctor Image */}
                 <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
                   <Image
-                    src={doctor.image}
+                    src={doctor.image || "/doctors/doctor-man.png"}
                     alt={doctor.name}
                     fill
                     className="object-cover"

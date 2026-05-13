@@ -15,12 +15,14 @@ import {
   Phone,
   Pencil,
 } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 export default function SettingsPage() {
+  const {user} = useAuthStore();
   // Profile settings state
   const [profileData, setProfileData] = useState({
-    name: "Dr. Demo User",
-    email: "demo.doctor@medihub.com",
+    name: user?.name || "Dr. John Doe",
+    email: user?.email || "demo.doctor@medihub.com",
     phone: "+880 1712-000000",
   })
   const [profileForm, setProfileForm] = useState({ ...profileData })

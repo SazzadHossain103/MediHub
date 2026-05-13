@@ -37,8 +37,8 @@ export default function DoctorDashboardLayout({
   const { user, logout, doctorToken } = useAuthStore();
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("medihub_doctor_logged_in")
-    if (!isLoggedIn) {
+     
+    if (!user) {
       router.push("/doctor/login")
       return
     }

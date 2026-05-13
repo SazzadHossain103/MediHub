@@ -42,8 +42,8 @@ export default function VerifyEmailPage() {
       }
 
       // ✅ Save token (for patient auto-login)
-      if (data.patientToken) {
-        setToken(data.patientToken);
+      if (data.token) {
+        setToken(data.token);
       }
 
       // ✅ Save user globally

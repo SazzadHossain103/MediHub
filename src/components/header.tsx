@@ -34,14 +34,34 @@ export function Header() {
   const router = useRouter()
 
   const logoutUser = async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      headers: {
+    if (user?.role === "patient") {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
           Authorization: `Bearer ${token}`,
         },
-      credentials: "include", // 🔥 VERY IMPORTANT
-      
-    });
+        credentials: "include", // 🔥 VERY IMPORTANT
+
+      });
+    }
+    else if (user?.role === "doctor") {
+      await fetch("/api/doctor/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include", // 🔥 VERY IMPORTANT
+      });
+    }
+    else if (user?.role === "hospital") {
+      await fetch("/api/hospital/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include", // 🔥 VERY IMPORTANT
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -86,35 +106,35 @@ export function Header() {
           user ? (
             <div className="hidden items-center gap-3 lg:flex">
               <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center cursor-pointer gap-2 px-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder-avatar.jpg" alt="Patient" />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user?.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden font-medium md:inline-block">{user?.name}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <Link href={`/${user?.role === "patient"?  "patient" : `${user?.role}/dashboard`}`}>Profile </Link> 
-                </DropdownMenuItem>
-                {/* <DropdownMenuItem>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center cursor-pointer gap-2 px-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="/placeholder-avatar.jpg" alt="Patient" />
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {user?.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden font-medium md:inline-block">{user?.name}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role}/dashboard`}`}>Profile </Link>
+                  </DropdownMenuItem>
+                  {/* <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem> */}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <button onClick={handleLogout} className="cursor-pointer">Logout</button>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <button onClick={handleLogout} className="cursor-pointer">Logout</button>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <div className="hidden items-center gap-3 lg:flex">
@@ -157,21 +177,21 @@ export function Header() {
               {user ? (
                 <div className="mt-4 flex flex-col gap-3">
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href={`/${user?.role === "patient"?  "patient" : `${user?.role}/dashboard`}`} onClick={() => setIsOpen(false)}>Profile</Link>
+                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role}/dashboard`}`} onClick={() => setIsOpen(false)}>Profile</Link>
                   </Button>
                   <Button variant="outline" className="w-full cursor-pointer " onClick={handleLogout}>
                     Logout
                   </Button>
                 </div>
               ) : (
-              <div className="mt-4 flex flex-col gap-3">
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href="/login" onClick={() => setIsOpen(false)}>Sign In</Link>
-                </Button>
-                <Button className="w-full" asChild>
-                  <Link href="/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
-                </Button>
-              </div>
+                <div className="mt-4 flex flex-col gap-3">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/login" onClick={() => setIsOpen(false)}>Sign In</Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <Link href="/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
+                  </Button>
+                </div>
               )}
             </nav>
           </SheetContent>
