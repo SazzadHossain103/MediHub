@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ type: "patient" | "hospital"; id: string; name: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { logout } = useAuthStore()
+  const { logout, adminToken, } = useAuthStore()
 
   // Load data on mount
   useEffect(() => {
@@ -76,10 +76,17 @@ export default function AdminDashboardPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/adminLogout", {
-      method: "POST",
-      credentials: "include", // 🔥 VERY IMPORTANT
-    });
+      const res = await fetch("/api/auth/adminLogout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+        credentials: "include", // 🔥 VERY IMPORTANT
+      });
+      if (!res.ok) {
+        console.log("Logout failed");
+      }
+
       logout();            // 🔥 clear Zustand (client)
 
       localStorage.removeItem("medihub_admin_logged_in")
@@ -88,6 +95,7 @@ export default function AdminDashboardPage() {
       console.error("Logout failed:", error);
     }
   }
+
 
   const openDeleteDialog = (type: "patient" | "hospital", id: string, name: string) => {
     setDeleteTarget({ type, id, name })

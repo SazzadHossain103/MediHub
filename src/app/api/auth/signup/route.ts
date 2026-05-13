@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     console.log("Existing user:", existingUser);
     console.log("Requested role:", role);
 
-    if (existingUser && existingUser.role === role) {
+    if (existingUser.email === email && existingUser.role === role) {
       return NextResponse.json(
         { error: "User already exists" },
         { status: 400 }

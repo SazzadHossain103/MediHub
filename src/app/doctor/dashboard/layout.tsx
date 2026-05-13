@@ -16,6 +16,7 @@ import {
   Menu,
   Stethoscope,
 } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 const sidebarItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/doctor/dashboard" },
@@ -33,19 +34,38 @@ export default function DoctorDashboardLayout({
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const { user, logout, doctorToken } = useAuthStore();
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("medihub_doctor_logged_in")
-    if (!isLoggedIn) {
+     
+    if (!user) {
       router.push("/doctor/login")
       return
     }
     setIsLoading(false)
   }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem("medihub_doctor_logged_in")
-    router.push("/doctor/login")
+  const handleLogout = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const res = await fetch("/api/doctor/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${doctorToken}`,
+        },
+        credentials: "include", // 🔥 VERY IMPORTANT
+      });
+      if (!res.ok) {
+        console.error("Logout failed with status:", res.status);
+        // return;
+      }
+
+      logout();            // 🔥 clear Zustand (client)
+
+      router.push("/doctor/login") // 🔥 redirect to login page
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
   }
 
   const isActive = (href: string) => {
@@ -140,7 +160,7 @@ export default function DoctorDashboardLayout({
           </Button>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-medium">Dr. Demo User</p>
+              <p className="text-sm font-medium">Dr. {user?.name}</p>
               <p className="text-xs text-muted-foreground">Doctor Portal</p>
             </div>
             <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">

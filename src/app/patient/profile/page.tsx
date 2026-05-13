@@ -31,6 +31,7 @@ import {
   MapPin,
   Users,
 } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
 
 const patientData = {
   name: "John Doe",
@@ -136,6 +137,7 @@ const medicalHistory = [
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("overview")
+  const { user } = useAuthStore();
 
   return (
     <div className="space-y-6">
@@ -143,13 +145,13 @@ export default function ProfilePage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-4">
           <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
-            <AvatarImage src="/placeholder-avatar.jpg" alt={patientData.name} />
+            <AvatarImage src="/placeholder-avatar.jpg" alt={user?.name} />
             <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
-              JD
+              {user?.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{patientData.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{user?.name}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
               <span>{patientData.age} years old</span>
               <span>·</span>

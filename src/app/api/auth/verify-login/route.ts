@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     console.log("verification successful, generated token:", token);
 
     // set cookie (if using cookies)
-    res.cookies.set("patientToken", token, {
+    res.cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

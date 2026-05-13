@@ -7,7 +7,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'MediHub - Every Solution. One Hub.',
+  title: 'MediHub - A Centralized Health Monitoring And Medical Service Providing System.',
   description: 'Centralized healthcare platform for Dhaka City. Find nearby hospitals, book beds, schedule appointments, and access emergency services all in one place.',
   generator: 'MediHub',
   icons: {
