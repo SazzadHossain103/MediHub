@@ -18,10 +18,11 @@ import {
 } from "@/src/components/ui/select"
 import { Upload, User, Briefcase, FileCheck, KeyRound } from "lucide-react"
 import { useAuthStore } from "@/src/store/useAuthStore"
+import { set } from "mongoose"
 
 export default function DoctorRegistrationPage() {
   const router = useRouter()
-  const { setOtpEmail } = useAuthStore();
+  const { setOtpEmail, setRole } = useAuthStore();
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -39,6 +40,7 @@ export default function DoctorRegistrationPage() {
     affiliatedHospital: "",
     // Account Information
     password: "",
+    role: "doctor",
   })
 
   const [files, setFiles] = useState({
@@ -87,6 +89,7 @@ export default function DoctorRegistrationPage() {
 
       console.log(data);
       setOtpEmail(formData.email);
+      setRole("doctor");
 
       router.push("/verify-email");
     } catch (error: any) {
@@ -416,7 +419,7 @@ export default function DoctorRegistrationPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
+              <Button type="submit" className="w-full cursor-pointer" size="lg">
                 Register as Doctor
               </Button>
 
