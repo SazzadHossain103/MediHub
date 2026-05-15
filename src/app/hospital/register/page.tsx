@@ -42,7 +42,7 @@ export default function HospitalRegistrationPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const { setUser} = useAuthStore()
-  const { setOtpEmail } = useAuthStore();
+  const { setOtpEmail, setRole } = useAuthStore();
 
   const handleLocationChange = useCallback((lat: number, lng: number) => {
     setLocation({ lat, lng })
@@ -108,11 +108,13 @@ export default function HospitalRegistrationPage() {
       //   role: "hospital",
       // })
       setOtpEmail(formData.email);
+      setRole("hospital");
+
 
       setSuccess(data.message || "Registration successful!")
-      setTimeout(() => {
-        router.push("/verify-email")
-      }, 2000)
+     
+      router.push("/verify-email")
+      
 
     } catch (error: any) {
       setError(error.message || "An error occurred during registration")
@@ -229,10 +231,18 @@ export default function HospitalRegistrationPage() {
 
             <div className="space-y-2">
               <Label>Hospital Location</Label>
-              <LocationPickerMap onLocationChange={handleLocationChange} />
+              <LocationPickerMap
+                initialLat={location.lat}
+                initialLng={location.lng}
+                onLocationChange={handleLocationChange}
+                interactive={true}
+              />
               <p className="text-xs text-muted-foreground">
-                Move the map to position the pin at your hospital location
+                Drag or pan the map until the pin is centered on your hospital location.
               </p>
+              <div className="text-xs text-slate-600">
+                Selected coordinates: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -261,7 +271,7 @@ export default function HospitalRegistrationPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
               {isLoading ? "Registering..." : "Register Hospital"}
             </Button>
 

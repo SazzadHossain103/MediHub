@@ -9,7 +9,7 @@ export default function VerifyEmailPage() {
   // const prefillEmail = searchParams.get("email") ?? "";
   // const [email, setEmail] = useState("");
 
-  const { email, setUser, setToken, setError, setLoading, isLoading } =
+  const { email, role, setUser, setToken, setError, setLoading, isLoading } =
     useAuthStore();
 
   const [otp, setOtp] = useState("");
@@ -35,6 +35,7 @@ export default function VerifyEmailPage() {
       });
 
       const data = await res.json();
+        console.log("Verification response:", data);
 
       if (!res.ok) {
         throw new Error(data.error || "Verification failed");
@@ -55,6 +56,9 @@ export default function VerifyEmailPage() {
 
       if (data.role === "hospital") {
         router.push("/hospital/login");
+      }
+      else if (data.role === "doctor") {
+        router.push("/doctor/login");
       }
       else router.push("/login");
 

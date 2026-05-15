@@ -20,6 +20,7 @@ type AuthState = {
 
   // OTP flow
   email: string | null;
+  role: string | null;
   otpStep: "idle" | "sent" | "verified";
 
   // UI state
@@ -36,6 +37,7 @@ type AuthState = {
   logout: () => void;
 
   setOtpEmail: (email: string) => void;
+  setRole: (role: string) => void;
   setOtpStep: (step: AuthState["otpStep"]) => void;
 
   setLoading: (loading: boolean) => void;
@@ -54,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       email: null,
+      role: null,
       otpStep: "idle",
 
       isLoading: false,
@@ -95,12 +98,18 @@ export const useAuthStore = create<AuthState>()(
           nurseToken: null,
           isAuthenticated: false,
           email: null,
+          role: null,
           otpStep: "idle",
         })),
 
       setOtpEmail: (email) =>
         set(() => ({
           email,
+        })),
+
+      setRole: (role) =>
+        set(() => ({
+          role,
         })),
 
       setOtpStep: (step) =>

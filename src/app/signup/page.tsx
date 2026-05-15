@@ -8,10 +8,11 @@ import { Heart, Eye, EyeOff, Check } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "./../../store/useAuthStore";
 import Image from "next/image";
+import { set } from 'mongoose';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { setOtpEmail} = useAuthStore();
+  const { setOtpEmail, setRole} = useAuthStore();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -97,6 +98,7 @@ export default function SignupPage() {
       // Redirect
       // const verifyUrl = `/verify?email=${encodeURIComponent(formData.email)}`;
       setOtpEmail(formData.email);
+      setRole("patient");
       const verifyUrl = `/verify-email`;
       // window.location.href = '/verify';
       router.push(verifyUrl);

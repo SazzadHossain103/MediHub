@@ -137,10 +137,10 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-scree  bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card">
-        <div className="container flex h-16 items-center justify-between px-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-card w-full flex justify-center">
+        <div className="container flex h-16 items-center justify-between gap-8 px-4">
           <div className="flex items-center gap-4">
             <Link href="/">
               <Image
@@ -164,7 +164,7 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container px-4 py-8">
+      <main className="container px-4 py-8 mx-auto flex flex-col justify-center">
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
           <Card className="border-l-4 border-l-primary">

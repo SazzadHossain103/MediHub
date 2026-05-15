@@ -20,11 +20,12 @@ import { User, Settings, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 const navLinks = [
-  { href: "#services", label: "Services" },
-  { href: "#how-it-works", label: "How It Works" },
-  { href: "#features", label: "Features" },
-  { href: "#hospitals", label: "Nearby Hospitals" },
-  { href: "#contact", label: "Contact" },
+  { href: "/#services", label: "Services" },
+  { href: "/#how-it-works", label: "How It Works" },
+  { href: "/#features", label: "Features" },
+  { href: "/#hospitals", label: "Nearby Hospitals" },
+  { href: "/map", label: "Hospitals Map" },
+  { href: "/#contact", label: "Contact" },
 ]
 
 export function Header() {

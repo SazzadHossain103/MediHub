@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
 
             // Account
             password,
+            role,
         } = body;
 
         // Validation
@@ -62,18 +64,19 @@ export async function POST(req: NextRequest) {
 
         // Check existing email
         const existingUser = await User.findOne({
-            email,
+            email
         });
-
+        
         if (existingUser) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Email already exists",
+                    message: "Email already exists for a doctor account",
                 },
                 { status: 409 }
             );
         }
+
 
         // Check medical registration
         const existingDoctor = await Doctor.findOne({

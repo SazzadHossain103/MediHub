@@ -12,13 +12,15 @@ export async function POST(req: NextRequest) {
 
     if (!email || !otp) {
       return NextResponse.json(
-        { error: "Email and OTP are required" },
-        { status: 400 }
+        { 
+          error: "Email and OTP are required" },
+        { status: 400 },
       );
     }
 
     // ✅ REMOVE role restriction
     const user = await User.findOne({ email });
+
 
     if (!user || !user.emailOtp?.codeHash) {
       return NextResponse.json(

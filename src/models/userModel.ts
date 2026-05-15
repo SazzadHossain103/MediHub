@@ -33,6 +33,8 @@ const userSchema = new Schema({
   },
 }, { timestamps: true });
 
+// userSchema.index({ email: 1, role: 1 }, { unique: true });
+
 const User = models.User || mongoose.model("User", userSchema);
 
 export default User;
