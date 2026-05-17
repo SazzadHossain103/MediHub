@@ -7,6 +7,7 @@ import { Input } from '@/src/components/ui/input';
 import { Heart, Eye, EyeOff, Check } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "./../../store/useAuthStore";
+import { toast } from '@/src/hooks/use-toast';
 import Image from "next/image";
 import { set } from 'mongoose';
 
@@ -87,8 +88,19 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
+        const errorMessage = data.error || 'Signup failed';
+        toast({
+          title: 'Signup failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        throw new Error(errorMessage);
       }
+
+      toast({
+        title: 'Signup successful',
+        description: data.message || 'Please verify your email to continue.',
+      });
 
       console.log('Signup success:', data);
 
@@ -105,6 +117,11 @@ export default function SignupPage() {
 
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
+      toast({
+        title: 'Signup failed',
+        description: err.message || 'Something went wrong',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +135,7 @@ export default function SignupPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center cursor-pointer">
           <Image
             src="/images/medihub-header.png"
             alt="MediHub - Every Solution. One Hub."
@@ -131,7 +148,7 @@ export default function SignupPage() {
           <nav className="flex items-center gap-3">
             <span className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
                 Sign in
               </Link>
             </span>
@@ -327,11 +344,11 @@ export default function SignupPage() {
                 />
                 <label htmlFor="terms" className="text-sm text-gray-600">
                   I agree to the{' '}
-                  <Link href="#" className="text-blue-600 hover:text-blue-700">
+                  <Link href="#" className="text-blue-600 hover:text-blue-700 cursor-pointer">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link href="#" className="text-blue-600 hover:text-blue-700">
+                  <Link href="#" className="text-blue-600 hover:text-blue-700 cursor-pointer">
                     Privacy Policy
                   </Link>
                 </label>
@@ -350,7 +367,7 @@ export default function SignupPage() {
             {/* Footer */}
             <p className="mt-6 text-center text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
                 Sign in here
               </Link>
             </p>

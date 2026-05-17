@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
         {/* Login Form Card */}
         <Card>
           <CardHeader className="text-center">
-            <Link href="/" className="flex justify-center mb-4">
+            <Link href="/" className="flex justify-center mb-4 cursor-pointer">
               <Image
                 src="/images/medihub-header.png"
                 alt="MediHub"
@@ -153,7 +153,7 @@ export default function AdminLoginPage() {
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                <Link href="/" className="text-primary hover:underline">
+                <Link href="/" className="text-primary hover:underline cursor-pointer">
                   Back to Home
                 </Link>
               </p>

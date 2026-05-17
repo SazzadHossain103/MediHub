@@ -16,6 +16,7 @@ import {
   RefreshCw,
   AlertCircle,
 } from "lucide-react"
+import { toast } from "@/src/hooks/use-toast"
 import {
   getLoggedInHospital,
   getHospitalById,
@@ -58,6 +59,12 @@ export default function HospitalStatusPage() {
 
   const handleLogout = () => {
     clearLoggedInHospital()
+    
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    
     router.push("/hospital/login")
   }
 
@@ -89,7 +96,7 @@ export default function HospitalStatusPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card">
         <div className="container flex h-16 items-center justify-between px-4">
-          <Link href="/">
+          <Link href="/" className="cursor-pointer">
             <Image
               src="/images/medihub-header.png"
               alt="MediHub"

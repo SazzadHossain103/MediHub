@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src
 import { Upload } from "lucide-react"
 import { Alert, AlertDescription } from "@/src/components/ui/alert"
 import { useAuthStore } from "@/src/store/useAuthStore"
+import { toast } from '@/src/hooks/use-toast'
 
 // Dynamically import map component to avoid SSR issues
 const LocationPickerMap = dynamic(() => import("@/src/components/location-picker-map"), {
@@ -99,8 +100,19 @@ export default function HospitalRegistrationPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Registration failed")
+        const errorMessage = data.error || "Registration failed"
+        toast({
+          title: 'Hospital registration failed',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+        throw new Error(errorMessage)
       }
+
+      toast({
+        title: 'Hospital registered',
+        description: data.message || 'Please verify your email to continue.',
+      })
 
       // setUser({
       //   id: data.id, // better: return from backend or decode JWT
@@ -117,7 +129,13 @@ export default function HospitalRegistrationPage() {
       
 
     } catch (error: any) {
-      setError(error.message || "An error occurred during registration")
+      const message = error.message || "An error occurred during registration"
+      setError(message)
+      toast({
+        title: 'Hospital registration failed',
+        description: message,
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -127,7 +145,7 @@ export default function HospitalRegistrationPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <Link href="/" className="flex justify-center mb-4">
+          <Link href="/" className="flex justify-center mb-4 cursor-pointer">
             <Image
               src="/images/medihub-header.png"
               alt="MediHub"
@@ -277,7 +295,7 @@ export default function HospitalRegistrationPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               Already registered?{" "}
-              <Link href="/hospital/login" className="text-primary hover:underline">
+              <Link href="/hospital/login" className="text-primary hover:underline cursor-pointer">
                 Login here
               </Link>
             </p>
