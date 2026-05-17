@@ -14,6 +14,7 @@ import { Progress } from "@/src/components/ui/progress"
 import { ScrollArea } from "@/src/components/ui/scroll-area"
 import { Separator } from "@/src/components/ui/separator"
 import { useAuthStore } from "@/src/store/useAuthStore"
+import { toast } from "@/src/hooks/use-toast"
 import {
   Select,
   SelectContent,
@@ -435,6 +436,11 @@ function SidebarContent({
 
       logout();            // 🔥 clear Zustand (client)
 
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+
       router.push("/hospital/login") // 🔥 redirect to login page
     } catch (error) {
       console.error("Logout failed:", error)
@@ -443,7 +449,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b border-border px-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image
             src="/images/medihub-header.png"
             alt="MediHub"

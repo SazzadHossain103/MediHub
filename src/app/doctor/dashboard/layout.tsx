@@ -17,6 +17,7 @@ import {
   Stethoscope,
 } from "lucide-react"
 import { useAuthStore } from "@/src/store/useAuthStore"
+import { toast } from "@/src/hooks/use-toast"
 
 const sidebarItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/doctor/dashboard" },
@@ -62,6 +63,11 @@ export default function DoctorDashboardLayout({
 
       logout();            // 🔥 clear Zustand (client)
 
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+
       router.push("/doctor/login") // 🔥 redirect to login page
     } catch (error) {
       console.error("Logout failed:", error)
@@ -89,7 +95,7 @@ export default function DoctorDashboardLayout({
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image
             src="/images/medihub-header.png"
             alt="MediHub"

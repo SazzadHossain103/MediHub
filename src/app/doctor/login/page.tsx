@@ -87,7 +87,7 @@ export default function DoctorLoginPage() {
         {/* Login Form Card */}
         <Card>
           <CardHeader className="text-center">
-            <Link href="/" className="flex justify-center mb-4">
+            <Link href="/" className="flex justify-center mb-4 cursor-pointer">
               <Image
                 src="/images/medihub-header.png"
                 alt="MediHub"
@@ -142,7 +142,7 @@ export default function DoctorLoginPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 {"Don't have an account?"}{" "}
-                <Link href="/doctor/register" className="text-primary hover:underline">
+                <Link href="/doctor/register" className="text-primary hover:underline cursor-pointer">
                   Register here
                 </Link>
               </p>

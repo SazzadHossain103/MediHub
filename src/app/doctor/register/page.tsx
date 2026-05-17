@@ -18,6 +18,7 @@ import {
 } from "@/src/components/ui/select"
 import { Upload, User, Briefcase, FileCheck, KeyRound } from "lucide-react"
 import { useAuthStore } from "@/src/store/useAuthStore"
+import { toast } from '@/src/hooks/use-toast'
 import { set } from "mongoose"
 
 export default function DoctorRegistrationPage() {
@@ -84,8 +85,19 @@ export default function DoctorRegistrationPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message);
+        const errorMessage = data.message || 'Doctor registration failed'
+        toast({
+          title: 'Doctor registration failed',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+        throw new Error(errorMessage)
       }
+
+      toast({
+        title: 'Doctor registered',
+        description: data.message || 'Please verify your email to continue.',
+      })
 
       console.log(data);
       setOtpEmail(formData.email);
@@ -94,6 +106,11 @@ export default function DoctorRegistrationPage() {
       router.push("/verify-email");
     } catch (error: any) {
       console.log(error.message);
+      toast({
+        title: 'Doctor registration failed',
+        description: error.message || 'Please try again.',
+        variant: 'destructive',
+      })
     }
   };
 
@@ -102,7 +119,7 @@ export default function DoctorRegistrationPage() {
       <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader className="text-center">
-            <Link href="/" className="flex justify-center mb-4">
+            <Link href="/" className="flex justify-center mb-4 cursor-pointer">
               <Image
                 src="/images/medihub-header.png"
                 alt="MediHub"
@@ -425,7 +442,7 @@ export default function DoctorRegistrationPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already registered?{" "}
-                <Link href="/doctor/login" className="text-primary hover:underline">
+                <Link href="/doctor/login" className="text-primary hover:underline cursor-pointer">
                   Login here
                 </Link>
               </p>

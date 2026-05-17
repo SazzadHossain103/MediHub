@@ -62,7 +62,7 @@ export default function LoginPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center cursor-pointer">
           <Image
             src="/images/medihub-header.png"
             alt="MediHub - Every Solution. One Hub."
@@ -75,7 +75,7 @@ export default function LoginPage() {
           <nav className="flex items-center gap-3">
             <span className="text-sm text-gray-600">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
                 Sign up
               </Link>
             </span>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                   <label htmlFor="password" className="block text-sm font-medium text-gray-900">
                     Password
                   </label>
-                  <Link href="/forgot-password" className="text-xs text-blue-600 hover:text-blue-700">
+                  <Link href="/forgot-password" className="text-xs text-blue-600 hover:text-blue-700 cursor-pointer">
                     Forgot password?
                   </Link>
                 </div>
@@ -184,11 +184,11 @@ export default function LoginPage() {
             {/* Footer */}
             <p className="text-center text-sm text-gray-600">
               By signing in, you agree to our{' '}
-              <Link href="#" className="text-blue-600 hover:text-blue-700">
+              <Link href="#" className="text-blue-600 hover:text-blue-700 cursor-pointer">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link href="#" className="text-blue-600 hover:text-blue-700">
+              <Link href="#" className="text-blue-600 hover:text-blue-700 cursor-pointer">
                 Privacy Policy
               </Link>
             </p>

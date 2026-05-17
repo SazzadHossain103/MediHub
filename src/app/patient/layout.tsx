@@ -33,6 +33,7 @@ import {
   Cross,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "@/src/hooks/use-toast"
 import { useAuthStore } from "./../../store/useAuthStore"
 
 
@@ -51,7 +52,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b border-border px-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image
             src="/images/medihub-header.png"
             alt="MediHub"
@@ -122,6 +123,11 @@ export default function DashboardLayout({
     try {
       await logoutUser();       // 🔥 clear cookie (server)
       logout();            // 🔥 clear Zustand (client)
+
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
 
       router.push("/login");    // 🔥 redirect
     } catch (error) {

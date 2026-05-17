@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "@/src/hooks/use-toast";
 import { useAuthStore } from "./../../store/useAuthStore";
 
 export default function VerifyEmailPage() {
@@ -52,6 +53,11 @@ export default function VerifyEmailPage() {
         name: data.name || "User",
         email: email!,
         role: data.role,
+      });
+
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
       });
 
       if (data.role === "patient") router.push("/patient");

@@ -46,6 +46,7 @@ import {
   type Hospital,
 } from "@/src/lib/mock-data"
 import { useAuthStore } from "../../../store/useAuthStore"
+import { toast } from "@/src/hooks/use-toast"
 
 export default function AdminDashboardPage() {
   const router = useRouter()
@@ -88,6 +89,11 @@ export default function AdminDashboardPage() {
       }
 
       logout();            // 🔥 clear Zustand (client)
+
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
 
       localStorage.removeItem("medihub_admin_logged_in")
       router.push("/admin/login")
@@ -142,7 +148,7 @@ export default function AdminDashboardPage() {
       <header className="sticky top-0 z-50 border-b border-border bg-card w-full flex justify-center">
         <div className="container flex h-16 items-center justify-between gap-8 px-4">
           <div className="flex items-center gap-4">
-            <Link href="/">
+            <Link href="/" className="cursor-pointer">
               <Image
                 src="/images/medihub-header.png"
                 alt="MediHub"

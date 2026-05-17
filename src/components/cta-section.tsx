@@ -34,7 +34,7 @@ export function CTASection() {
                 className="gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/90"
                 asChild
               >
-                <Link href="/dashboard">
+                <Link href="/dashboard" className="cursor-pointer">
                   Get Started Now
                   <ArrowRight className="h-4 w-4" />
                 </Link>

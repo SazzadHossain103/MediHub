@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetDescription } from "@/src/compo
 import { Menu } from "lucide-react"
 import { useState } from "react"
 import { useAuthStore } from "../store/useAuthStore"
+import { toast } from "@/src/hooks/use-toast"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,12 +64,26 @@ export function Header() {
         credentials: "include", // 🔥 VERY IMPORTANT
       });
     }
+    else if (user?.role === "super_admin") {
+      await fetch("/api/auth/adminLogout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include", // 🔥 VERY IMPORTANT
+      });
+    }
   };
 
   const handleLogout = async () => {
     try {
       await logoutUser();       // 🔥 clear cookie (server)
       logout();            // 🔥 clear Zustand (client)
+
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
 
       router.push("/login");    // 🔥 redirect
     } catch (error) {
@@ -79,7 +94,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center cursor-pointer">
           <Image
             src="/images/medihub-header.png"
             alt="MediHub - Every Solution. One Hub."
@@ -96,7 +111,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary cursor-pointer"
             >
               {link.label}
             </Link>
@@ -123,7 +138,7 @@ export function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />
-                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role}/dashboard`}`}>Profile </Link>
+                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role}/dashboard`}`} className="cursor-pointer">Profile </Link>
                   </DropdownMenuItem>
                   {/* <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
@@ -140,10 +155,10 @@ export function Header() {
           ) : (
             <div className="hidden items-center gap-3 lg:flex">
               <Button variant="outline" size="sm" asChild>
-                <Link href="/login">Sign In</Link>
+                <Link href="/login" className="cursor-pointer">Sign In</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/signup" className="cursor-pointer">Sign Up</Link>
               </Button>
             </div>
           )
@@ -170,7 +185,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className="text-base font-medium text-foreground transition-colors hover:text-primary"
+                  className="text-base font-medium text-foreground transition-colors hover:text-primary cursor-pointer"
                 >
                   {link.label}
                 </Link>
@@ -178,7 +193,7 @@ export function Header() {
               {user ? (
                 <div className="mt-4 flex flex-col gap-3">
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role}/dashboard`}`} onClick={() => setIsOpen(false)}>Profile</Link>
+                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role === "super_admin" ? "admin" : user?.role}/dashboard`}`} onClick={() => setIsOpen(false)} className="cursor-pointer">Profile</Link>
                   </Button>
                   <Button variant="outline" className="w-full cursor-pointer " onClick={handleLogout}>
                     Logout
@@ -187,10 +202,10 @@ export function Header() {
               ) : (
                 <div className="mt-4 flex flex-col gap-3">
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/login" onClick={() => setIsOpen(false)}>Sign In</Link>
+                    <Link href="/login" onClick={() => setIsOpen(false)} className="cursor-pointer">Sign In</Link>
                   </Button>
                   <Button className="w-full" asChild>
-                    <Link href="/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
+                    <Link href="/signup" onClick={() => setIsOpen(false)} className="cursor-pointer">Sign Up</Link>
                   </Button>
                 </div>
               )}
