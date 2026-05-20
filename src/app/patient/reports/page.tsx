@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/ta
 import { Badge } from "@/src/components/ui/badge"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
+import { Label } from "@/src/components/ui/label"
 import { ScrollArea } from "@/src/components/ui/scroll-area"
 import {
   Select,
@@ -20,6 +21,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/src/components/ui/dialog"
 import {
   Search,
@@ -37,9 +39,31 @@ import {
   Minus,
   Printer,
   Shield,
+  Plus,
+  Upload,
 } from "lucide-react"
 
-const testReports = [
+const demoReportImage = "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/312437349_619671059942455_965027182600412432_n-08Az34O7fyakzXi3xpGA653o67slpm.jpg"
+
+type Report = {
+  id: number
+  name: string
+  date: string
+  lab: string
+  status: "ready" | "processing"
+  category: string
+  doctor: string
+  results: Array<{
+    parameter: string
+    value: string
+    unit: string
+    range: string
+    status: "normal" | "high" | "low"
+  }>
+  fileUrl: string | null
+}
+
+const testReports: Report[] = [
   {
     id: 1,
     name: "Complete Blood Count (CBC)",
@@ -55,6 +79,7 @@ const testReports = [
       { parameter: "Platelet Count", value: "250,000", unit: "/mcL", range: "150,000-400,000", status: "normal" },
       { parameter: "Hematocrit", value: "42", unit: "%", range: "38.8-50", status: "normal" },
     ],
+    fileUrl: demoReportImage,
   },
   {
     id: 2,
@@ -71,6 +96,7 @@ const testReports = [
       { parameter: "Triglycerides", value: "145", unit: "mg/dL", range: "<150", status: "normal" },
       { parameter: "VLDL Cholesterol", value: "29", unit: "mg/dL", range: "<30", status: "normal" },
     ],
+    fileUrl: demoReportImage,
   },
   {
     id: 3,
@@ -81,6 +107,7 @@ const testReports = [
     category: "Hormone Test",
     doctor: "Dr. Fatima Begum",
     results: [],
+    fileUrl: null as string | null,
   },
   {
     id: 4,
@@ -94,6 +121,7 @@ const testReports = [
       { parameter: "HbA1c", value: "6.8", unit: "%", range: "<7.0", status: "normal" },
       { parameter: "Estimated Average Glucose", value: "148", unit: "mg/dL", range: "-", status: "normal" },
     ],
+    fileUrl: demoReportImage,
   },
   {
     id: 5,
@@ -110,6 +138,7 @@ const testReports = [
       { parameter: "Total Bilirubin", value: "0.8", unit: "mg/dL", range: "0.1-1.2", status: "normal" },
       { parameter: "Albumin", value: "4.2", unit: "g/dL", range: "3.5-5.0", status: "normal" },
     ],
+    fileUrl: null as string | null,
   },
   {
     id: 6,
@@ -122,27 +151,64 @@ const testReports = [
     results: [
       { parameter: "Findings", value: "Normal chest radiograph", unit: "-", range: "-", status: "normal" },
     ],
+    fileUrl: demoReportImage,
   },
 ]
 
 export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState<string>("all")
-  const [selectedReport, setSelectedReport] = useState<typeof testReports[0] | null>(null)
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [allReports, setAllReports] = useState(testReports)
+  const [formData, setFormData] = useState({
+    reportName: "",
+    hospitalName: "",
+    testType: "",
+    file: null as File | null,
+  })
 
-  const filteredReports = testReports.filter((report) => {
+  const filteredReports = allReports.filter((report) => {
     const matchesSearch = report.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = filterCategory === "all" || report.category === filterCategory
     return matchesSearch && matchesCategory
   })
 
-  const readyReports = testReports.filter((r) => r.status === "ready")
-  const processingReports = testReports.filter((r) => r.status === "processing")
+  const readyReports = allReports.filter((r) => r.status === "ready")
+  const processingReports = allReports.filter((r) => r.status === "processing")
 
-  const handleViewReport = (report: typeof testReports[0]) => {
+  const handleViewReport = (report: Report) => {
     setSelectedReport(report)
     setIsViewOpen(true)
+  }
+
+  const handleAddReport = () => {
+    if (!formData.reportName || !formData.hospitalName || !formData.testType || !formData.file) {
+      alert("Please fill in all fields")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const fileUrl = e.target?.result as string
+      const newReport = {
+        id: allReports.length + 1,
+        name: formData.reportName,
+        date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+        lab: formData.hospitalName,
+        status: "ready" as const,
+        category: formData.testType,
+        doctor: "User Uploaded",
+        results: [],
+        fileUrl: fileUrl,
+      }
+
+      setAllReports([newReport, ...allReports])
+      setFormData({ reportName: "", hospitalName: "", testType: "", file: null })
+      setIsAddOpen(false)
+    }
+    reader.readAsDataURL(formData.file)
   }
 
   const getStatusIcon = (status: string) => {
@@ -168,11 +234,15 @@ export default function ReportsPage() {
             View and download your medical test reports
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1 text-secondary">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Badge variant="outline" className="gap-1 text-secondary w-fit">
             <Shield className="h-3 w-3" />
             Verified Reports
           </Badge>
+          <Button onClick={() => setIsAddOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Report
+          </Button>
         </div>
       </div>
 
@@ -299,14 +369,14 @@ export default function ReportsPage() {
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </Button>
-                      <Button variant="outline" size="sm">
+                      {/* <Button variant="outline" size="sm">
                         <Download className="mr-2 h-4 w-4" />
                         Download
                       </Button>
                       <Button variant="outline" size="sm">
                         <Share2 className="mr-2 h-4 w-4" />
                         Share
-                      </Button>
+                      </Button> */}
                     </>
                   )}
                 </div>
@@ -325,109 +395,203 @@ export default function ReportsPage() {
               {selectedReport?.date} | {selectedReport?.lab}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 pr-4 h-[calc(90vh-180px)]">
             <div className="space-y-6 py-4">
-              {/* Report Header */}
-              <Card className="bg-muted/30">
-                <CardContent className="grid gap-4 p-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Ordered By</p>
-                    <p className="font-medium">{selectedReport?.doctor}</p>
+              {/* File Viewer - Show image if fileUrl exists */}
+              {selectedReport && selectedReport.fileUrl && selectedReport.fileUrl.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-muted bg-muted/30 p-4">
+                    {selectedReport.fileUrl.startsWith("data:application/pdf") ? (
+                      <iframe
+                        src={selectedReport.fileUrl}
+                        className="w-full h-[600px] rounded border"
+                        title="PDF Report"
+                      />
+                    ) : (
+                      <img
+                        src={selectedReport.fileUrl}
+                        alt="Report"
+                        className="w-full h-auto rounded border object-contain"
+                      />
+                    )}
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Laboratory</p>
-                    <p className="font-medium">{selectedReport?.lab}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Report Date</p>
-                    <p className="font-medium">{selectedReport?.date}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Category</p>
-                    <p className="font-medium">{selectedReport?.category}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Results Table */}
-              <div>
-                <h3 className="mb-4 font-semibold">Test Results</h3>
-                <div className="rounded-lg border">
-                  <div className="grid grid-cols-5 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
-                    <span>Parameter</span>
-                    <span>Value</span>
-                    <span>Unit</span>
-                    <span>Reference Range</span>
-                    <span>Status</span>
-                  </div>
-                  {selectedReport?.results.map((result, index) => (
-                    <div
-                      key={index}
-                      className={`grid grid-cols-5 gap-4 p-3 text-sm ${
-                        index !== selectedReport.results.length - 1 ? "border-b" : ""
-                      } ${result.status !== "normal" ? "bg-red-50/50" : ""}`}
-                    >
-                      <span className="font-medium">{result.parameter}</span>
-                      <span
-                        className={`font-semibold ${
-                          result.status === "high"
-                            ? "text-red-600"
-                            : result.status === "low"
-                            ? "text-amber-600"
-                            : ""
-                        }`}
-                      >
-                        {result.value}
-                      </span>
-                      <span className="text-muted-foreground">{result.unit}</span>
-                      <span className="text-muted-foreground">{result.range}</span>
-                      <span className="flex items-center gap-1">
-                        {getStatusIcon(result.status)}
-                        <span
-                          className={`capitalize ${
-                            result.status === "high"
-                              ? "text-red-600"
-                              : result.status === "low"
-                              ? "text-amber-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {result.status}
-                        </span>
-                      </span>
-                    </div>
-                  ))}
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Report Header */}
+                  <Card className="bg-muted/30">
+                    <CardContent className="grid gap-4 p-4 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ordered By</p>
+                        <p className="font-medium">{selectedReport?.doctor}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Laboratory</p>
+                        <p className="font-medium">{selectedReport?.lab}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Report Date</p>
+                        <p className="font-medium">{selectedReport?.date}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Category</p>
+                        <p className="font-medium">{selectedReport?.category}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              {/* Verification Badge */}
-              <Card className="border-secondary/30 bg-secondary/5">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <Shield className="h-6 w-6 text-secondary" />
+                  {/* Results Table */}
                   <div>
-                    <p className="font-semibold text-secondary">Digitally Verified Report</p>
-                    <p className="text-sm text-muted-foreground">
-                      This report has been verified by {selectedReport?.lab} and is authentic.
-                    </p>
+                    <h3 className="mb-4 font-semibold">Test Results</h3>
+                    <div className="rounded-lg border">
+                      <div className="grid grid-cols-5 gap-4 border-b bg-muted/50 p-3 text-sm font-medium">
+                        <span>Parameter</span>
+                        <span>Value</span>
+                        <span>Unit</span>
+                        <span>Reference Range</span>
+                        <span>Status</span>
+                      </div>
+                      {selectedReport?.results.map((result, index) => (
+                        <div
+                          key={index}
+                          className={`grid grid-cols-5 gap-4 p-3 text-sm ${
+                            index !== selectedReport.results.length - 1 ? "border-b" : ""
+                          } ${result.status !== "normal" ? "bg-red-50/50" : ""}`}
+                        >
+                          <span className="font-medium">{result.parameter}</span>
+                          <span
+                            className={`font-semibold ${
+                              result.status === "high"
+                                ? "text-red-600"
+                                : result.status === "low"
+                                ? "text-amber-600"
+                                : ""
+                            }`}
+                          >
+                            {result.value}
+                          </span>
+                          <span className="text-muted-foreground">{result.unit}</span>
+                          <span className="text-muted-foreground">{result.range}</span>
+                          <span className="flex items-center gap-1">
+                            {getStatusIcon(result.status)}
+                            <span
+                              className={`capitalize ${
+                                result.status === "high"
+                                  ? "text-red-600"
+                                  : result.status === "low"
+                                  ? "text-amber-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              {result.status}
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Verification Badge */}
+                  <Card className="border-secondary/30 bg-secondary/5">
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <Shield className="h-6 w-6 text-secondary" />
+                      <div>
+                        <p className="font-semibold text-secondary">Digitally Verified Report</p>
+                        <p className="text-sm text-muted-foreground">
+                          This report has been verified by {selectedReport?.lab} and is authentic.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </ScrollArea>
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline">
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF
-            </Button>
-            <Button>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share with Doctor
-            </Button>
+
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Report Dialog */}
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Test Report</DialogTitle>
+            <DialogDescription>
+              Upload your medical test report by providing the required information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="report-name">Report Name *</Label>
+              <Input
+                id="report-name"
+                placeholder="e.g., Blood Test Results"
+                value={formData.reportName}
+                onChange={(e) => setFormData({ ...formData, reportName: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hospital-name">Hospital/Lab Name *</Label>
+              <Input
+                id="hospital-name"
+                placeholder="e.g., Square Hospital Diagnostics"
+                value={formData.hospitalName}
+                onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="test-type">Test Type *</Label>
+              <Select value={formData.testType} onValueChange={(value) => setFormData({ ...formData, testType: value })}>
+                <SelectTrigger id="test-type">
+                  <SelectValue placeholder="Select test type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Blood Test">Blood Test</SelectItem>
+                  <SelectItem value="Hormone Test">Hormone Test</SelectItem>
+                  <SelectItem value="Imaging">Imaging</SelectItem>
+                  <SelectItem value="Pathology">Pathology</SelectItem>
+                  <SelectItem value="Cardiology">Cardiology</SelectItem>
+                  <SelectItem value="Others">Others</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">Upload File (PDF, JPG, PNG) *</Label>
+              <div className="flex items-center justify-center w-full">
+                <label
+                  htmlFor="file-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:bg-muted/50"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {formData.file ? formData.file.name : "Click to upload or drag and drop"}
+                    </p>
+                  </div>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                  />
+                </label>
+              </div>
+            </div>
           </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddReport}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Report
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

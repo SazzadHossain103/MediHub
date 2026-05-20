@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import {
   Table,
@@ -33,8 +34,58 @@ const dashboardStats = {
   chamberTime: "9:00 AM - 5:00 PM",
 }
 
+type DoctorProfile = {
+  _id: string
+  userId: string
+  fullName: string
+  avatar?: string | null
+  dateOfBirth: string
+  gender: string
+  contactNumber: string
+  email: string
+  address: string
+  specialization: string
+  yearsOfExperience: number
+  qualifications: string
+  affiliatedHospital: string
+  status: string
+  maxAppointmentsPerDay: number
+  consultationFee: number
+  chamberTime: string
+  isAppointmentOpen: boolean
+}
+
 export default function DoctorDashboardPage() {
-  const { user } = useAuthStore();
+  const { user, token, doctorToken } = useAuthStore()
+  const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const authToken = doctorToken || token
+
+  useEffect(() => {
+    const fetchDoctorProfile = async () => {
+      if (!user?.id || !authToken) return
+
+      try {
+        const res = await fetch(`/api/doctor/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+
+        const data = await res.json()
+        if (!res.ok) {
+          setFetchError(data.message || data.error || "Unable to load doctor data")
+          return
+        }
+
+        setDoctorProfile(data.doctor)
+      } catch (error: any) {
+        setFetchError(error?.message || "Something went wrong")
+      }
+    }
+
+    fetchDoctorProfile()
+  }, [user?.id, authToken])
 
   return (
     <div className="space-y-6">
@@ -45,13 +96,67 @@ export default function DoctorDashboardPage() {
           Dashboard Overview
         </h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, Dr. {user?.name}
+          Welcome back, {user?.name}
         </p>
       </div>
 
+      {/* {fetchError ? (
+        <Card className="border border-red-200">
+          <CardHeader>
+            <CardTitle className="text-base text-red-700">Unable to load doctor profile</CardTitle>
+            <CardDescription>{fetchError}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : doctorProfile ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Doctor Profile</CardTitle>
+            <CardDescription>Loaded from backend using your user ID</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="font-semibold">{doctorProfile.fullName}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Specialization</p>
+                <p className="font-semibold">{doctorProfile.specialization}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Experience</p>
+                <p className="font-semibold">{doctorProfile.yearsOfExperience} years</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Hospital</p>
+                <p className="font-semibold">{doctorProfile.affiliatedHospital}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-semibold">{doctorProfile.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Contact</p>
+                <p className="font-semibold">{doctorProfile.contactNumber}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Doctor Profile</CardTitle>
+            <CardDescription>Loading profile data...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Fetching your doctor profile from the backend.</p>
+          </CardContent>
+        </Card>
+      )} */}
+
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        {/* <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -61,7 +166,7 @@ export default function DoctorDashboardPage() {
           <CardContent>
             <p className="text-3xl font-bold">{dashboardStats.totalPatientsTreated.toLocaleString()}</p>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card>
           <CardHeader className="pb-2">
@@ -83,7 +188,7 @@ export default function DoctorDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{dashboardStats.maxAppointmentLimit}</p>
+            <p className="text-3xl font-bold">{doctorProfile?.maxAppointmentsPerDay}</p>
           </CardContent>
         </Card>
 
@@ -95,7 +200,7 @@ export default function DoctorDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold">{dashboardStats.chamberTime}</p>
+            <p className="text-xl font-semibold">{doctorProfile?.chamberTime}</p>
           </CardContent>
         </Card>
       </div>

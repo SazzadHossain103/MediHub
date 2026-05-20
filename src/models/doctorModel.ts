@@ -15,6 +15,11 @@ const doctorSchema = new Schema(
       required: true,
     },
 
+    avatar: {
+      type: String,
+      default: null,
+    },
+
     dateOfBirth: {
       type: Date,
       required: true,
@@ -39,6 +44,17 @@ const doctorSchema = new Schema(
     address: {
       type: String,
       required: true,
+    },
+
+    location: {
+      lat: {
+        type: Number,
+        default: null,
+      },
+      lng: {
+        type: Number,
+        default: null,
+      },
     },
 
     // Professional Information
@@ -77,6 +93,52 @@ const doctorSchema = new Schema(
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
+    },
+
+    maxAppointmentsPerDay: {
+      type: Number,
+      default: 20,
+    },
+
+    appointments:{
+      type: Number,
+      default: 0,
+    },
+
+    consultationFee: {
+      type: Number,
+      default: 0,
+    },
+
+    chamberTime: {
+      type: String,
+      default: "9:00 AM - 5:00 PM",
+    },
+
+    isAppointmentOpen: {
+      type: Boolean,
+      default: true,
+    },
+
+    // Document URLs (stored from Cloudinary)
+    governmentId: {
+      type: String,
+      default: null,
+    },
+
+    medicalLicense: {
+      type: String,
+      default: null,
+    },
+
+    degreeCertificates: {
+      type: String,
+      default: null,
+    },
+
+    recentPhotograph: {
+      type: String,
+      default: null,
     },
   },
   {

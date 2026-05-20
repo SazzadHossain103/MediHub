@@ -19,7 +19,8 @@ import {
 import { Upload, User, Briefcase, FileCheck, KeyRound } from "lucide-react"
 import { useAuthStore } from "@/src/store/useAuthStore"
 import { toast } from '@/src/hooks/use-toast'
-import { set } from "mongoose"
+import cloudinary from "@/src/lib/cloudinary"
+
 
 export default function DoctorRegistrationPage() {
   const router = useRouter()
@@ -51,6 +52,8 @@ export default function DoctorRegistrationPage() {
     recentPhotograph: null as File | null,
   })
 
+  const [isLoading, setIsLoading] = useState(false)
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -66,51 +69,61 @@ export default function DoctorRegistrationPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const res = await fetch(
-        "/api/doctor/register",
-        {
-          method: "POST",
+    const submitData = new FormData();
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+    // Text Fields
+    Object.entries(formData).forEach(([key, value]) => {
+      submitData.append(key, value);
+    });
 
-          body: JSON.stringify(formData),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const errorMessage = data.message || 'Doctor registration failed'
-        toast({
-          title: 'Doctor registration failed',
-          description: errorMessage,
-          variant: 'destructive',
-        })
-        throw new Error(errorMessage)
+    // File Fields
+    Object.entries(files).forEach(([key, value]) => {
+      if (value) {
+        submitData.append(key, value);
       }
+    });
 
-      toast({
-        title: 'Doctor registered',
-        description: data.message || 'Please verify your email to continue.',
-      })
+    const res = await fetch(
+      "/api/doctor/register",
+      {
+        method: "POST",
+        body: submitData,
+      }
+    );
 
-      console.log(data);
-      setOtpEmail(formData.email);
-      setRole("doctor");
+    const data = await res.json();
 
-      router.push("/verify-email");
-    } catch (error: any) {
-      console.log(error.message);
-      toast({
-        title: 'Doctor registration failed',
-        description: error.message || 'Please try again.',
-        variant: 'destructive',
-      })
+    if (!res.ok) {
+      throw new Error(
+        data.message || "Doctor registration failed"
+      );
+    }
+
+    toast({
+      title: "Doctor registered",
+      description:
+        data.message ||
+        "Please verify your email",
+    });
+
+    setOtpEmail(formData.email);
+    setRole("doctor");
+
+    router.push("/verify-email");
+  } catch (error: any) {
+    console.log(error);
+
+    toast({
+      title: "Registration failed",
+      description:
+        error.message || "Please try again",
+      variant: "destructive",
+    });
+  } finally {
+      setIsLoading(false);
     }
   };
 
@@ -436,8 +449,8 @@ export default function DoctorRegistrationPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full cursor-pointer" size="lg">
-                Register as Doctor
+              <Button type="submit" className="w-full cursor-pointer" size="lg" disabled={isLoading}>
+                {isLoading ? "Uploading & Registering..." : "Register as Doctor"}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

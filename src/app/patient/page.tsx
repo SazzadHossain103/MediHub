@@ -162,7 +162,7 @@ export default function DashboardPage() {
               <CardDescription>Your scheduled doctor visits</CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard/appointments">
+              <Link href="/patient/appointments">
                 View All <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>

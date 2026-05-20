@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
+import { toast } from "@/src/hooks/use-toast"
+import { useAuthStore } from "@/src/store/useAuthStore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Switch } from "@/src/components/ui/switch"
 import { Badge } from "@/src/components/ui/badge"
@@ -184,6 +186,55 @@ export default function PatientsPage() {
     }
   })
 
+  const { user, token, doctorToken } = useAuthStore()
+  const authToken = doctorToken || token
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
+
+  // Load appointment settings from backend
+  useEffect(() => {
+    const loadAppointmentSettings = async () => {
+      if (!user?.id || !authToken) {
+        setIsLoadingSettings(false)
+        return
+      }
+
+      setIsLoadingSettings(true)
+      setSettingsError(null)
+
+      try {
+        const res = await fetch(`/api/doctor/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "Unable to fetch appointment settings")
+        }
+
+        const today = new Date().toISOString().split("T")[0]
+        setAppointmentData((prev) => ({
+          ...prev,
+          [today]: {
+            ...prev[today],
+            isOpen: data.doctor.isAppointmentOpen ?? true,
+            maxAppointments: data.doctor.maxAppointmentsPerDay ?? 30,
+          },
+        }))
+      } catch (err: any) {
+        console.error("Failed to load appointment settings:", err)
+      } finally {
+        setIsLoadingSettings(false)
+      }
+    }
+
+    loadAppointmentSettings()
+  }, [user?.id, authToken])
+
   // Patient profile modal state
   const [selectedPatient, setSelectedPatient] = useState<typeof mockPatients[0] | null>(null)
   const [patientModalOpen, setPatientModalOpen] = useState(false)
@@ -225,6 +276,44 @@ export default function PatientsPage() {
     updateDateAppointments(updates)
   }
 
+  const handleSaveAppointmentSettings = async () => {
+    if (!user?.id || !authToken) {
+      setSettingsError("Authentication required to save appointment settings.")
+      return
+    }
+
+    setSettingsError(null)
+    setIsSavingSettings(true)
+
+    try {
+      const res = await fetch(`/api/doctor/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          isAppointmentOpen: currentDateData.isOpen,
+          maxAppointmentsPerDay: currentDateData.maxAppointments,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to save appointment settings")
+      }
+
+      toast({
+        title: "Appointment settings saved",
+        description: "Your appointment availability and daily limit have been updated.",
+      })
+    } catch (err: any) {
+      setSettingsError(err?.message || "Could not save appointment settings")
+    } finally {
+      setIsSavingSettings(false)
+    }
+  }
+
   // Patient profile handlers
   const handleViewPatient = (patientId: string) => {
     const patient = mockPatients.find((p) => p.id === patientId)
@@ -264,70 +353,94 @@ export default function PatientsPage() {
           <CardDescription>Manage appointments for the selected date</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Date Picker */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <Label htmlFor="date" className="whitespace-nowrap">
-              Select Date:
-            </Label>
-            <Input
-              id="date"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-auto"
-            />
-          </div>
+          {isLoadingSettings && (
+            <div className="text-center py-4 text-sm text-muted-foreground">
+              Loading appointment settings...
+            </div>
+          )}
+          {!isLoadingSettings && (
+            <>
+              {/* Date Picker */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                <Label htmlFor="date" className="whitespace-nowrap">
+                  Select Date:
+                </Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full sm:w-auto"
+                />
+              </div>
 
-          {/* Appointment Controls */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Switch
-                id="appointments-toggle"
-                checked={currentDateData.isOpen}
-                onCheckedChange={toggleAppointments}
-                disabled={currentAppointments >= maxAppointments && maxAppointments > 0}
-              />
-              <Label htmlFor="appointments-toggle" className="cursor-pointer">
-                {currentDateData.isOpen ? (
-                  <Badge className="bg-green-600">Open for Appointments</Badge>
-                ) : (
-                  <Badge variant="secondary">Closed for Appointments</Badge>
+              {/* Appointment Controls */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="appointments-toggle"
+                    checked={currentDateData.isOpen}
+                    onCheckedChange={toggleAppointments}
+                    disabled={currentAppointments >= maxAppointments && maxAppointments > 0}
+                  />
+                  <Label htmlFor="appointments-toggle" className="cursor-pointer">
+                    {currentDateData.isOpen ? (
+                      <Badge className="bg-green-600">Open for Appointments</Badge>
+                    ) : (
+                      <Badge variant="secondary">Closed for Appointments</Badge>
+                    )}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="max-appointments" className="whitespace-nowrap">
+                    Max Appointments:
+                  </Label>
+                  <Input
+                    id="max-appointments"
+                    type="number"
+                    min="0"
+                    value={maxAppointments}
+                    onChange={(e) => handleMaxAppointmentsChange(e.target.value)}
+                    className="w-24"
+                  />
+                </div>
+              </div>
+
+              {/* Appointment Count */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Appointments Filled</span>
+                  <span className="font-semibold">
+                    {currentAppointments} / {maxAppointments}
+                  </span>
+                </div>
+                <Progress
+                  value={maxAppointments > 0 ? (currentAppointments / maxAppointments) * 100 : 0}
+                  className="h-2"
+                />
+                {currentAppointments >= maxAppointments && maxAppointments > 0 && (
+                  <p className="text-sm text-destructive">
+                    Maximum appointments reached. Appointments automatically closed.
+                  </p>
                 )}
-              </Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Label htmlFor="max-appointments" className="whitespace-nowrap">
-                Max Appointments:
-              </Label>
-              <Input
-                id="max-appointments"
-                type="number"
-                min="0"
-                value={maxAppointments}
-                onChange={(e) => handleMaxAppointmentsChange(e.target.value)}
-                className="w-24"
-              />
-            </div>
-          </div>
+              </div>
 
-          {/* Appointment Count */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Appointments Filled</span>
-              <span className="font-semibold">
-                {currentAppointments} / {maxAppointments}
-              </span>
-            </div>
-            <Progress
-              value={maxAppointments > 0 ? (currentAppointments / maxAppointments) * 100 : 0}
-              className="h-2"
-            />
-            {currentAppointments >= maxAppointments && maxAppointments > 0 && (
-              <p className="text-sm text-destructive">
-                Maximum appointments reached. Appointments automatically closed.
-              </p>
-            )}
-          </div>
+              {settingsError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {settingsError}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSaveAppointmentSettings}
+                  disabled={isSavingSettings || !authToken}
+                >
+                  {isSavingSettings ? "Saving..." : "Save Appointment Settings"}
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -398,7 +511,7 @@ export default function PatientsPage() {
 
       {/* Patient Profile Modal */}
       <Dialog open={patientModalOpen} onOpenChange={setPatientModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto scroll-auto  flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
