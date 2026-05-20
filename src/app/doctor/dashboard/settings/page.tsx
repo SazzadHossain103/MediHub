@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
@@ -15,28 +15,79 @@ import {
   Phone,
   Pencil,
 } from "lucide-react"
+import { toast } from "@/src/hooks/use-toast"
 import { useAuthStore } from "@/src/store/useAuthStore"
 
+type ProfileData = {
+  name: string
+  email: string
+  phone: string
+}
+
 export default function SettingsPage() {
-  const {user} = useAuthStore();
-  // Profile settings state
-  const [profileData, setProfileData] = useState({
+  const { user, token, doctorToken, setUser } = useAuthStore()
+  const authToken = doctorToken || token
+  const [profileData, setProfileData] = useState<ProfileData>({
     name: user?.name || "Dr. John Doe",
     email: user?.email || "demo.doctor@medihub.com",
     phone: "+880 1712-000000",
   })
-  const [profileForm, setProfileForm] = useState({ ...profileData })
+  const [profileForm, setProfileForm] = useState<ProfileData>({ ...profileData })
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [tempProfileImage, setTempProfileImage] = useState<string | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
-
-  // Password settings state
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isPasswordSaving, setIsPasswordSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   })
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id || !authToken) {
+        setIsLoading(false)
+        return
+      }
+
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const res = await fetch(`/api/doctor/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "Unable to fetch doctor profile")
+        }
+
+        const backendProfile = {
+          name: data.doctor.fullName || user.name || "",
+          email: data.doctor.email || user.email || "",
+          phone: data.doctor.contactNumber || "",
+        }
+
+        setProfileData(backendProfile)
+        setProfileForm(backendProfile)
+        setProfileImage(data.doctor.avatar || null)
+      } catch (err: any) {
+        setError(err.message || "Could not load profile")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [user?.id, authToken, user?.name, user?.email])
 
   const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -59,12 +110,66 @@ export default function SettingsPage() {
     setProfileForm({ ...profileData })
     setTempProfileImage(profileImage)
     setIsEditingProfile(false)
+    setError(null)
   }
 
-  const handleSaveProfile = () => {
-    setProfileData({ ...profileForm })
-    setProfileImage(tempProfileImage)
-    setIsEditingProfile(false)
+  const handleSaveProfile = async () => {
+    if (!user?.id || !authToken) {
+      setError("Unable to update profile: authentication required")
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const requestBody: Record<string, any> = {
+        fullName: profileForm.name,
+        email: profileForm.email,
+        contactNumber: profileForm.phone,
+      }
+
+      if (tempProfileImage) {
+        requestBody.avatarData = tempProfileImage
+      }
+
+      const res = await fetch(`/api/doctor/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to save profile")
+      }
+
+      setProfileData(profileForm)
+      setIsEditingProfile(false)
+      setProfileImage(data.doctor?.avatar || profileImage)
+      setTempProfileImage(null)
+
+      if (user) {
+        setUser({
+          ...user,
+          name: profileForm.name,
+          email: profileForm.email,
+        })
+      }
+
+      toast({
+        title: "Settings updated",
+        description: "Your doctor profile has been updated successfully.",
+      })
+    } catch (err: any) {
+      setError(err.message || "Update failed")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleOpenPasswordForm = () => {
@@ -80,23 +185,58 @@ export default function SettingsPage() {
     setIsChangingPassword(false)
   }
 
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert("New passwords do not match")
+      setError("New passwords do not match")
       return
     }
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-      alert("Please fill in all password fields")
+      setError("Please fill in all password fields")
       return
     }
-    // Mock save - UI only
-    alert("Password changed (UI only - no backend)")
-    setPasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    })
-    setIsChangingPassword(false)
+    if (!authToken) {
+      setError("Authentication required to change password")
+      return
+    }
+
+    setError(null)
+    setIsPasswordSaving(true)
+
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to change password")
+      }
+
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully.",
+      })
+
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
+      setIsChangingPassword(false)
+    } catch (err: any) {
+      setError(err.message || "Password update failed")
+    } finally {
+      setIsPasswordSaving(false)
+    }
   }
 
   const displayImage = isEditingProfile ? tempProfileImage : profileImage
@@ -115,7 +255,12 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Profile Settings */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -135,7 +280,6 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Profile Picture */}
           <div className="flex items-center gap-6">
             <div className="relative">
               <Avatar className="h-24 w-24 border-4 border-card shadow-lg">
@@ -163,17 +307,15 @@ export default function SettingsPage() {
             <div>
               <p className="font-medium">Profile Picture</p>
               <p className="text-sm text-muted-foreground">
-                {isEditingProfile 
-                  ? "Click the camera icon to upload a new photo" 
+                {isEditingProfile
+                  ? "Click the camera icon to upload a new photo"
                   : "Your current profile photo"}
               </p>
             </div>
           </div>
 
           {isEditingProfile ? (
-            /* Edit Mode */
             <>
-              {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
@@ -187,7 +329,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -202,7 +343,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="phone" className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
@@ -217,10 +357,9 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3 pt-2">
-                <Button onClick={handleSaveProfile}>
-                  Save Changes
+                <Button onClick={handleSaveProfile} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
                 <Button variant="outline" onClick={handleCancelProfileEdit}>
                   Cancel
@@ -228,7 +367,6 @@ export default function SettingsPage() {
               </div>
             </>
           ) : (
-            /* Read-Only Mode */
             <div className="space-y-4">
               <div className="flex items-center gap-3 py-2">
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -256,7 +394,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Change Password */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -277,7 +414,6 @@ export default function SettingsPage() {
         </CardHeader>
         {isChangingPassword && (
           <CardContent className="space-y-6">
-            {/* Current Password */}
             <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
               <Input
@@ -289,7 +425,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* New Password */}
             <div className="space-y-2">
               <Label htmlFor="new-password">New Password</Label>
               <Input
@@ -301,7 +436,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm New Password</Label>
               <Input
@@ -313,7 +447,6 @@ export default function SettingsPage() {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
               <Button onClick={handleSavePassword}>
                 Save Password

@@ -35,7 +35,8 @@ export default function DoctorDashboardLayout({
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const { user, logout, doctorToken } = useAuthStore();
+  const { user, logout, doctorToken, token } = useAuthStore();
+  const logoutToken = doctorToken || token
 
   useEffect(() => {
      
@@ -52,7 +53,7 @@ export default function DoctorDashboardLayout({
       const res = await fetch("/api/doctor/logout", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${doctorToken}`,
+          Authorization: `Bearer ${logoutToken}`,
         },
         credentials: "include", // 🔥 VERY IMPORTANT
       });
@@ -166,7 +167,7 @@ export default function DoctorDashboardLayout({
           </Button>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-medium">Dr. {user?.name}</p>
+              <p className="text-sm font-medium">{user?.name}</p>
               <p className="text-xs text-muted-foreground">Doctor Portal</p>
             </div>
             <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
