@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
@@ -21,6 +21,8 @@ import {
   DollarSign,
   Edit,
 } from "lucide-react"
+import { useAuthStore } from "@/src/store/useAuthStore"
+import { toast } from "@/src/hooks/use-toast"
 
 // Dynamically import map component to avoid SSR issues
 const LocationPickerMap = dynamic(() => import("@/src/components/location-picker-map"), {
@@ -46,7 +48,9 @@ interface ChamberInfo {
 }
 
 export default function ChamberInfoPage() {
-  // Chamber info state
+  const { user, token, doctorToken } = useAuthStore()
+  const authToken = doctorToken || token
+
   const [chamberInfo, setChamberInfo] = useState<ChamberInfo>({
     chamberTime: "9:00 AM - 5:00 PM",
     consultationFee: "1000",
@@ -56,8 +60,57 @@ export default function ChamberInfoPage() {
   const [editChamberOpen, setEditChamberOpen] = useState(false)
   const [editChamberForm, setEditChamberForm] = useState<ChamberInfo>(chamberInfo)
   const [editLocation, setEditLocation] = useState(chamberInfo.location)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Chamber edit handlers
+  useEffect(() => {
+    const fetchChamberInfo = async () => {
+      if (!user?.id || !authToken) {
+        setIsLoading(false)
+        return
+      }
+
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const res = await fetch(`/api/doctor/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "Unable to load chamber info")
+        }
+
+        const doctor = data.doctor
+        setChamberInfo({
+          chamberTime: doctor.chamberTime || "9:00 AM - 5:00 PM",
+          consultationFee: String(doctor.consultationFee ?? "1000"),
+          address: doctor.address || "",
+          location: doctor.location || { lat: 23.7937, lng: 90.4147 },
+        })
+        setEditChamberForm({
+          chamberTime: doctor.chamberTime || "9:00 AM - 5:00 PM",
+          consultationFee: String(doctor.consultationFee ?? "1000"),
+          address: doctor.address || "",
+          location: doctor.location || { lat: 23.7937, lng: 90.4147 },
+        })
+        setEditLocation(doctor.location || { lat: 23.7937, lng: 90.4147 })
+      } catch (err: any) {
+        setError(err.message || "Could not load chamber info")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchChamberInfo()
+  }, [user?.id, authToken])
+
   const handleEditChamber = () => {
     setEditChamberForm(chamberInfo)
     setEditLocation(chamberInfo.location)
@@ -68,12 +121,51 @@ export default function ChamberInfoPage() {
     setEditLocation({ lat, lng })
   }, [])
 
-  const handleSaveChamber = () => {
-    setChamberInfo({
-      ...editChamberForm,
-      location: editLocation,
-    })
-    setEditChamberOpen(false)
+  const handleSaveChamber = async () => {
+    if (!user?.id || !authToken) {
+      setError("Authentication required")
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/doctor/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          chamberTime: editChamberForm.chamberTime,
+          consultationFee: editChamberForm.consultationFee,
+          address: editChamberForm.address,
+          location: editLocation,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to update chamber info")
+      }
+
+      setChamberInfo({
+        chamberTime: data.doctor.chamberTime || editChamberForm.chamberTime,
+        consultationFee: String(data.doctor.consultationFee ?? editChamberForm.consultationFee),
+        address: data.doctor.address || editChamberForm.address,
+        location: data.doctor.location || editLocation,
+      })
+      toast({
+        title: "Chamber info updated",
+        description: "Your chamber information has been successfully updated.",
+      })
+      setEditChamberOpen(false)
+    } catch (err: any) {
+      setError(err.message || "Update failed")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -114,7 +206,7 @@ export default function ChamberInfoPage() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
+              {/* <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" /> */}
               <div>
                 <p className="text-sm font-medium">Consultation Fee</p>
                 <p className="text-muted-foreground">{chamberInfo.consultationFee} BDT</p>
@@ -196,11 +288,18 @@ export default function ChamberInfoPage() {
               </p>
             </div>
           </div>
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditChamberOpen(false)}>
+            <Button variant="outline" onClick={() => setEditChamberOpen(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleSaveChamber}>Save Changes</Button>
+            <Button onClick={handleSaveChamber} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

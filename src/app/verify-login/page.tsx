@@ -10,7 +10,7 @@ export default function VerifyEmailPage() {
   // const prefillEmail = searchParams.get("email") ?? "";
   // const [email, setEmail] = useState("");
 
-  const { email, setUser, setToken, setError, setLoading, isLoading } =
+  const { email, setUser, setToken, setDoctorToken, setError, setLoading, isLoading } =
     useAuthStore();
 
   const [otp, setOtp] = useState("");
@@ -45,6 +45,10 @@ export default function VerifyEmailPage() {
       // ✅ Save token (for patient auto-login)
       if (data.token) {
         setToken(data.token);
+      }
+
+      if (data.role === "doctor" && data.token) {
+        setDoctorToken(data.token)
       }
 
       // ✅ Save user globally

@@ -49,12 +49,12 @@ const doctorSchema = new Schema(
     location: {
       lat: {
         type: Number,
-        // required: true,
-        },
-       lng: {
-            type: Number,
-            // required: true,
-        },
+        default: null,
+      },
+      lng: {
+        type: Number,
+        default: null,
+      },
     },
 
     // Professional Information
@@ -110,6 +110,10 @@ const doctorSchema = new Schema(
       default: 0,
     },
 
+    chamberTime: {
+      type: String,
+      default: "9:00 AM - 5:00 PM",
+    },
 
     isAppointmentOpen: {
       type: Boolean,
