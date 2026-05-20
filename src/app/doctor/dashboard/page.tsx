@@ -45,13 +45,13 @@ export default function DoctorDashboardPage() {
           Dashboard Overview
         </h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, Dr. {user?.name}
+          Welcome back, {user?.name}
         </p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        {/* <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -61,7 +61,7 @@ export default function DoctorDashboardPage() {
           <CardContent>
             <p className="text-3xl font-bold">{dashboardStats.totalPatientsTreated.toLocaleString()}</p>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card>
           <CardHeader className="pb-2">

@@ -398,7 +398,7 @@ export default function PatientsPage() {
 
       {/* Patient Profile Modal */}
       <Dialog open={patientModalOpen} onOpenChange={setPatientModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto scroll-auto  flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
