@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
@@ -49,6 +49,36 @@ export default function HospitalsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("distance")
   const [view, setView] = useState<"map" | "list">("map")
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+
+  // Get user's location on mount
+  React.useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+        },
+        () => {
+          // Default to Dhaka center if location denied
+          setUserLocation({ lat: 23.7808, lng: 90.4094 })
+        }
+      )
+    }
+  }, [])
+
+  const handleGetDirections = () => {
+    if (!selectedHospital || !userLocation) {
+      alert("Location or hospital information not available")
+      return
+    }
+
+    // Create Google Maps directions URL
+    const mapsUrl = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${selectedHospital.lat},${selectedHospital.lng}`
+    window.open(mapsUrl, "_blank")
+  }
 
   const filteredHospitals = sampleHospitals
     .filter(
@@ -209,7 +239,7 @@ export default function HospitalsPage() {
                 </div>
 
                 {/* Wait Time */}
-                <div className="rounded-lg border border-border p-4">
+                {/* <div className="rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-chart-3" />
@@ -217,7 +247,7 @@ export default function HospitalsPage() {
                     </div>
                     <span className="text-xl font-bold">{selectedHospital.waitTime}</span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Contact */}
                 <div>
@@ -246,13 +276,13 @@ export default function HospitalsPage() {
 
                 {/* Actions */}
                 <div className="space-y-2">
-                  <Button className="w-full" asChild>
+                  {/* <Button className="w-full" asChild>
                     <a href={`/dashboard/appointments?hospital=${selectedHospital.id}`}>
                       <Calendar className="mr-2 h-4 w-4" />
                       Book Appointment
                     </a>
-                  </Button>
-                  <Button variant="outline" className="w-full">
+                  </Button> */}
+                  <Button variant="outline" className="w-full" onClick={handleGetDirections}>
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Get Directions
                   </Button>

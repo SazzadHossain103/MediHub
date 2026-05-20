@@ -31,6 +31,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/src/components/ui/calendar"
+import { format } from "date-fns"
+import { cn } from "@/src/lib/utils"
 import { 
   Search, 
   MapPin, 
@@ -40,6 +44,7 @@ import {
   Phone,
   BadgeCheck,
   Calendar,
+  CalendarIcon,
   User,
   Banknote,
   AlertCircle,
@@ -298,6 +303,7 @@ interface BookingFormData {
 export default function DoctorsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedDoctor, setSelectedDoctor] = useState<typeof doctorsData[0] | null>(null)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [isUnavailableAlert, setIsUnavailableAlert] = useState(false)
@@ -392,6 +398,30 @@ export default function DoctorsPage() {
             className="pl-10"
           />
         </div>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-full sm:w-[240px] justify-start text-left font-normal",
+                !selectedDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-full sm:w-[220px]">
             <Stethoscope className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -421,7 +451,7 @@ export default function DoctorsPage() {
                 {/* Doctor Image */}
                 <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
                   <Image
-                    src={doctor.image || "/doctors/doctor-man.png"}
+                    src={doctor.image}
                     alt={doctor.name}
                     fill
                     className="object-cover"
@@ -510,9 +540,10 @@ export default function DoctorsPage() {
 
             <CardFooter className="bg-muted/30 pt-4">
               <Button 
-                className="w-full gap-2" 
-                onClick={() => handleBookAppointment(doctor)}
+                className={`w-full gap-2 ${!doctor.isAvailable ? "bg-gray-400 text-white hover:bg-gray-400 cursor-not-allowed" : ""}`}
+                onClick={() => doctor.isAvailable && handleBookAppointment(doctor)}
                 variant={doctor.isAvailable ? "default" : "secondary"}
+                disabled={!doctor.isAvailable}
               >
                 <Calendar className="h-4 w-4" />
                 Book Appointment

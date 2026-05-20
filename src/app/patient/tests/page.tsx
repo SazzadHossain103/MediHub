@@ -7,7 +7,6 @@ import { Badge } from "@/src/components/ui/badge"
 import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Label } from "@/src/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group"
 import { Calendar } from "@/src/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover"
 import { ScrollArea } from "@/src/components/ui/scroll-area"
@@ -20,13 +19,6 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/src/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select"
 import { cn } from "@/src/lib/utils"
 import { format } from "date-fns"
 import {
@@ -69,6 +61,7 @@ const popularTests = [
     description: "Measures different components of blood including red cells, white cells, and platelets.",
     preparation: "No special preparation required. Fasting not necessary.",
     sampleType: "Blood",
+    hospital: "Square Hospital Diagnostics",
   },
   {
     id: 2,
@@ -79,6 +72,7 @@ const popularTests = [
     description: "Measures cholesterol levels including HDL, LDL, and triglycerides.",
     preparation: "Fasting for 9-12 hours required before the test.",
     sampleType: "Blood",
+    hospital: "Labaid Diagnostics",
   },
   {
     id: 3,
@@ -89,6 +83,7 @@ const popularTests = [
     description: "Measures average blood sugar levels over the past 2-3 months.",
     preparation: "No fasting required.",
     sampleType: "Blood",
+    hospital: "Popular Diagnostics",
   },
   {
     id: 4,
@@ -99,6 +94,7 @@ const popularTests = [
     description: "Measures TSH, T3, and T4 to assess thyroid function.",
     preparation: "No special preparation required.",
     sampleType: "Blood",
+    hospital: "Square Hospital Diagnostics",
   },
   {
     id: 5,
@@ -109,6 +105,7 @@ const popularTests = [
     description: "X-ray imaging of the chest to examine lungs, heart, and chest wall.",
     preparation: "Remove metal objects. No other preparation needed.",
     sampleType: "Imaging",
+    hospital: "Labaid Diagnostics",
   },
   {
     id: 6,
@@ -119,6 +116,7 @@ const popularTests = [
     description: "Records the electrical activity of the heart.",
     preparation: "Avoid caffeine and exercise before the test.",
     sampleType: "Non-invasive",
+    hospital: "Popular Diagnostics",
   },
   {
     id: 7,
@@ -129,6 +127,7 @@ const popularTests = [
     description: "Measures enzymes and proteins to assess liver health.",
     preparation: "Fasting for 8-10 hours may be required.",
     sampleType: "Blood",
+    hospital: "Square Hospital Diagnostics",
   },
   {
     id: 8,
@@ -139,33 +138,7 @@ const popularTests = [
     description: "Measures creatinine, BUN, and other markers of kidney function.",
     preparation: "Stay hydrated. Fasting may be required.",
     sampleType: "Blood",
-  },
-]
-
-const diagnosticCenters = [
-  {
-    id: 1,
-    name: "Square Hospital Diagnostics",
-    address: "18/F Bir Uttam Qazi Nuruzzaman Sarak",
-    distance: "1.2 km",
-    rating: 4.8,
-    availableSlots: ["09:00 AM", "10:30 AM", "02:00 PM", "04:30 PM"],
-  },
-  {
-    id: 2,
-    name: "Labaid Diagnostics",
-    address: "House 1, Road 4, Dhanmondi",
-    distance: "0.8 km",
-    rating: 4.6,
-    availableSlots: ["08:00 AM", "11:00 AM", "01:00 PM", "03:30 PM"],
-  },
-  {
-    id: 3,
-    name: "Popular Diagnostics",
-    address: "House 16, Road 2, Dhanmondi",
-    distance: "1.5 km",
-    rating: 4.5,
-    availableSlots: ["09:30 AM", "12:00 PM", "02:30 PM", "05:00 PM"],
+    hospital: "Labaid Diagnostics",
   },
 ]
 
@@ -176,32 +149,33 @@ interface SelectedTest {
   category: string
   duration: string
   preparation: string
+  hospital: string
 }
 
 export default function TestsPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [hospitalFilter, setHospitalFilter] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTest, setSelectedTest] = useState<SelectedTest | null>(null)
   const [bookingStep, setBookingStep] = useState(1)
-  const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
-  const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
 
   const filteredTests = popularTests.filter((test) => {
     const matchesSearch =
       test.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       test.category.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesHospital = !hospitalFilter || test.hospital.toLowerCase().includes(hospitalFilter.toLowerCase())
     const matchesCategory = !selectedCategory || test.category.toLowerCase().includes(selectedCategory)
-    return matchesSearch && matchesCategory
+    return matchesSearch && matchesHospital && matchesCategory
   })
+
+  const uniqueHospitals = Array.from(new Set(popularTests.map((t) => t.hospital)))
 
   const handleBookTest = (test: SelectedTest) => {
     setSelectedTest(test)
     setBookingStep(1)
-    setSelectedCenter(null)
     setSelectedDate(undefined)
-    setSelectedTime(null)
     setIsBookingOpen(true)
   }
 
@@ -252,14 +226,25 @@ export default function TestsPage() {
 
       {/* Search and Categories */}
       <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search tests by name or category..."
-            className="pl-10 py-6 text-lg"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search tests by name..."
+              className="pl-10 py-6 text-base"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by hospital name..."
+              className="pl-10 py-6 text-base"
+              value={hospitalFilter}
+              onChange={(e) => setHospitalFilter(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -295,11 +280,17 @@ export default function TestsPage() {
         {filteredTests.map((test) => (
           <Card key={test.id} className="flex flex-col">
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <Badge variant="outline" className="mb-2">
-                  {test.category}
-                </Badge>
-                <span className="text-lg font-bold text-primary">৳{test.price}</span>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <Badge variant="outline" className="mb-2">
+                    {test.category}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                    <MapPin className="h-4 w-4" />
+                    <span className="truncate">{test.hospital}</span>
+                  </div>
+                </div>
+                <span className="text-lg font-bold text-primary whitespace-nowrap">৳{test.price}</span>
               </div>
               <CardTitle className="text-lg">{test.name}</CardTitle>
               <CardDescription>{test.description}</CardDescription>
@@ -331,6 +322,7 @@ export default function TestsPage() {
                     category: test.category,
                     duration: test.duration,
                     preparation: test.preparation,
+                    hospital: test.hospital,
                   })
                 }
               >
@@ -348,13 +340,13 @@ export default function TestsPage() {
           <DialogHeader>
             <DialogTitle>Book {selectedTest?.name}</DialogTitle>
             <DialogDescription>
-              Complete the booking in 3 simple steps
+              Select your preferred date
             </DialogDescription>
           </DialogHeader>
 
           {/* Progress Steps */}
           <div className="flex items-center justify-between px-4 py-2">
-            {[1, 2, 3].map((step) => (
+            {[1, 2].map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={cn(
@@ -366,7 +358,7 @@ export default function TestsPage() {
                 >
                   {bookingStep > step ? <CheckCircle className="h-5 w-5" /> : step}
                 </div>
-                {step < 3 && (
+                {step < 2 && (
                   <div
                     className={cn(
                       "mx-2 h-1 w-16 rounded md:w-24",
@@ -379,100 +371,43 @@ export default function TestsPage() {
           </div>
 
           <div className="py-4">
-            {/* Step 1: Select Center */}
+            {/* Step 1: Select Date */}
             {bookingStep === 1 && (
               <div className="space-y-4">
-                <h3 className="font-semibold">Select Diagnostic Center</h3>
-                <RadioGroup value={selectedCenter || ""} onValueChange={setSelectedCenter}>
-                  {diagnosticCenters.map((center) => (
-                    <div
-                      key={center.id}
-                      className={cn(
-                        "flex items-start space-x-3 rounded-lg border p-4 cursor-pointer transition-all",
-                        selectedCenter === center.id.toString()
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50"
-                      )}
-                      onClick={() => setSelectedCenter(center.id.toString())}
-                    >
-                      <RadioGroupItem value={center.id.toString()} id={`center-${center.id}`} />
-                      <div className="flex-1">
-                        <Label htmlFor={`center-${center.id}`} className="font-semibold cursor-pointer">
-                          {center.name}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">{center.address}</p>
-                        <div className="mt-2 flex items-center gap-3 text-sm">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {center.distance}
-                          </span>
-                          <Badge variant="secondary" className="text-xs">
-                            ⭐ {center.rating}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-
-            {/* Step 2: Select Date & Time */}
-            {bookingStep === 2 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold">Select Date & Time</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label className="mb-2 block">Select Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !selectedDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) =>
-                            date < new Date() || date > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <Label className="mb-2 block">Select Time Slot</Label>
-                    <Select value={selectedTime || ""} onValueChange={setSelectedTime}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {diagnosticCenters
-                          .find((c) => c.id.toString() === selectedCenter)
-                          ?.availableSlots.map((slot) => (
-                            <SelectItem key={slot} value={slot}>
-                              {slot}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <h3 className="font-semibold">Select Date</h3>
+                <div>
+                  <Label className="mb-2 block">Choose your preferred date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        disabled={(date) =>
+                          date < new Date() || date > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             )}
 
-            {/* Step 3: Confirm */}
-            {bookingStep === 3 && (
+            {/* Step 2: Confirm */}
+            {bookingStep === 2 && (
               <div className="space-y-4">
                 <h3 className="font-semibold">Confirm Your Booking</h3>
                 <Card>
@@ -482,18 +417,12 @@ export default function TestsPage() {
                       <span className="font-semibold">{selectedTest?.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Center</span>
-                      <span>
-                        {diagnosticCenters.find((c) => c.id.toString() === selectedCenter)?.name}
-                      </span>
+                      <span className="text-muted-foreground">Hospital</span>
+                      <span>{selectedTest?.hospital}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date</span>
                       <span>{selectedDate ? format(selectedDate, "PPP") : "-"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Time</span>
-                      <span>{selectedTime}</span>
                     </div>
                     <div className="border-t pt-4 flex justify-between">
                       <span className="font-semibold">Total Amount</span>
@@ -532,13 +461,10 @@ export default function TestsPage() {
                 Back
               </Button>
             )}
-            {bookingStep < 3 ? (
+            {bookingStep < 2 ? (
               <Button
                 onClick={() => setBookingStep(bookingStep + 1)}
-                disabled={
-                  (bookingStep === 1 && !selectedCenter) ||
-                  (bookingStep === 2 && (!selectedDate || !selectedTime))
-                }
+                disabled={!selectedDate}
               >
                 Continue
                 <ArrowRight className="ml-2 h-4 w-4" />

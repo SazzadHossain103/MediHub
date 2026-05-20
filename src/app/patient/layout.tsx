@@ -42,7 +42,7 @@ const sidebarLinks = [
   { href: "/patient/profile", label: "Medical Profile", icon: User },
   { href: "/patient/hospitals", label: "Nearby Hospitals", icon: MapPin },
   { href: "/patient/doctors", label: "Find Doctors", icon: Stethoscope },
-  { href: "/patient/nurses", label: "Find Nurses", icon: Cross },
+  // { href: "/patient/nurses", label: "Find Nurses", icon: Cross },
   { href: "/patient/appointments", label: "Appointments", icon: Calendar },
   { href: "/patient/tests", label: "Medical Tests", icon: TestTube },
   { href: "/patient/reports", label: "Test Reports", icon: FileText },
@@ -172,10 +172,34 @@ export default function DashboardLayout({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="max-h-[300px] overflow-y-auto">
+                  <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 cursor-pointer">
+                    <span className="font-semibold text-sm text-foreground">Appointment Confirmed</span>
+                    <span className="text-xs text-muted-foreground">Your appointment with Dr. Sarah Ahmed is confirmed for tomorrow at 10:00 AM.</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 cursor-pointer">
+                    <span className="font-semibold text-sm text-foreground">New Test Result</span>
+                    <span className="text-xs text-muted-foreground">Your complete blood count (CBC) test results are now available.</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="flex flex-col items-start gap-1 p-3 cursor-pointer">
+                    <span className="font-semibold text-sm text-foreground">System Update</span>
+                    <span className="text-xs text-muted-foreground">MediHub will undergo scheduled maintenance this Sunday at 2 AM.</span>
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 px-2">
@@ -193,11 +217,11 @@ export default function DashboardLayout({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  <Link href='/patient'>Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  <Link href='/patient/profile'>Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">
