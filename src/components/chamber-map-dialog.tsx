@@ -12,7 +12,7 @@ import { Button } from "@/src/components/ui/button"
 import { MapPin, Clock, Building2, Navigation, ExternalLink, Loader2 } from "lucide-react"
 
 interface Doctor {
-  id: number
+  id: string | number
   name: string
   specializationLabel: string
   chamberAddress: string

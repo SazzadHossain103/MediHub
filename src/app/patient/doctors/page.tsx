@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/src/components/ui/card"
@@ -80,219 +80,31 @@ const categories = [
   { value: "general", label: "General Physician" },
 ]
 
-// Mock doctor data
-const doctorsData = [
-  {
-    id: 1,
-    name: "Dr. Md. Rafiqul Islam",
-    specialization: "cardiologist",
-    specializationLabel: "Cardiologist",
-    qualification: "MBBS, MD (Cardiology), FCPS",
-    experience: "18 years",
-    hospital: "Square Hospital",
-    chamberAddress: "House 42, Road 5, Dhanmondi, Dhaka",
-    chamberLocation: { lat: 23.7461, lng: 90.3742 },
-    chamberTime: "6:00 PM - 10:00 PM",
-    chamberDays: "Sat, Mon, Wed",
-    visitFee: 1500,
-    rating: 4.8,
-    totalPatients: 2500,
-    isAvailable: true,
-    currentSerial: 15,
-    maxSerial: 25,
-    image: "/doctors/doctor-man.png",
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "Dr. Fatima Begum",
-    specialization: "gynecologist",
-    specializationLabel: "Gynecologist & Obstetrician",
-    qualification: "MBBS, FCPS (Gynae & Obs)",
-    experience: "15 years",
-    hospital: "Labaid Hospital",
-    chamberAddress: "Green Road, Farmgate, Dhaka",
-    chamberLocation: { lat: 23.7565, lng: 90.3889 },
-    chamberTime: "5:00 PM - 9:00 PM",
-    chamberDays: "Sun, Tue, Thu",
-    visitFee: 1200,
-    rating: 4.9,
-    totalPatients: 3200,
-    isAvailable: true,
-    currentSerial: 8,
-    maxSerial: 20,
-    image: "/doctors/doctor-woman.png",
-    verified: true,
-  },
-  {
-    id: 3,
-    name: "Dr. Ahmed Hossain",
-    specialization: "neurologist",
-    specializationLabel: "Neurologist",
-    qualification: "MBBS, MD (Neurology)",
-    experience: "12 years",
-    hospital: "United Hospital",
-    chamberAddress: "Gulshan-2, Dhaka",
-    chamberLocation: { lat: 23.7925, lng: 90.4078 },
-    chamberTime: "7:00 PM - 11:00 PM",
-    chamberDays: "Sat, Mon, Wed, Fri",
-    visitFee: 2000,
-    rating: 4.7,
-    totalPatients: 1800,
-    isAvailable: false,
-    currentSerial: 20,
-    maxSerial: 20,
-    image: "/doctors/doctor-man.png",
-    verified: true,
-  },
-  {
-    id: 4,
-    name: "Dr. Kamal Uddin",
-    specialization: "orthopedic",
-    specializationLabel: "Orthopedic Surgeon",
-    qualification: "MBBS, MS (Ortho), FACS",
-    experience: "20 years",
-    hospital: "Apollo Hospital",
-    chamberAddress: "Bashundhara R/A, Dhaka",
-    chamberLocation: { lat: 23.8103, lng: 90.4125 },
-    chamberTime: "4:00 PM - 8:00 PM",
-    chamberDays: "Sun, Tue, Thu, Sat",
-    visitFee: 1800,
-    rating: 4.6,
-    totalPatients: 4100,
-    isAvailable: true,
-    currentSerial: 12,
-    maxSerial: 30,
-    image: "/doctors/doctor-man.png",
-    verified: true,
-  },
-  {
-    id: 5,
-    name: "Dr. Nasreen Sultana",
-    specialization: "dermatologist",
-    specializationLabel: "Dermatologist",
-    qualification: "MBBS, DDV, MD (Dermatology)",
-    experience: "10 years",
-    hospital: "Popular Diagnostic Centre",
-    chamberAddress: "Shantinagar, Dhaka",
-    chamberLocation: { lat: 23.7392, lng: 90.4125 },
-    chamberTime: "3:00 PM - 7:00 PM",
-    chamberDays: "Sat, Mon, Wed",
-    visitFee: 1000,
-    rating: 4.5,
-    totalPatients: 2100,
-    isAvailable: true,
-    currentSerial: 5,
-    maxSerial: 15,
-    image: "/doctors/doctor-woman.png",
-    verified: false,
-  },
-  {
-    id: 6,
-    name: "Dr. Shahidul Alam",
-    specialization: "pediatrician",
-    specializationLabel: "Pediatrician",
-    qualification: "MBBS, DCH, MD (Pediatrics)",
-    experience: "14 years",
-    hospital: "Dhaka Shishu Hospital",
-    chamberAddress: "Mirpur-10, Dhaka",
-    chamberLocation: { lat: 23.8069, lng: 90.3687 },
-    chamberTime: "5:00 PM - 9:00 PM",
-    chamberDays: "Sun, Tue, Thu, Sat",
-    visitFee: 800,
-    rating: 4.9,
-    totalPatients: 5500,
-    isAvailable: true,
-    currentSerial: 18,
-    maxSerial: 35,
-    image: "/doctors/doctor-man.png",
-    verified: true,
-  },
-  {
-    id: 7,
-    name: "Dr. Rezaul Karim",
-    specialization: "psychiatrist",
-    specializationLabel: "Psychiatrist",
-    qualification: "MBBS, FCPS (Psychiatry)",
-    experience: "16 years",
-    hospital: "National Mental Health Institute",
-    chamberAddress: "Mohammadpur, Dhaka",
-    chamberLocation: { lat: 23.7662, lng: 90.3589 },
-    chamberTime: "6:00 PM - 9:00 PM",
-    chamberDays: "Mon, Wed, Fri",
-    visitFee: 1500,
-    rating: 4.8,
-    totalPatients: 1200,
-    isAvailable: false,
-    currentSerial: 10,
-    maxSerial: 10,
-    image: "/doctors/doctor-man.png",
-    verified: true,
-  },
-  {
-    id: 8,
-    name: "Dr. Tahmina Akter",
-    specialization: "ophthalmologist",
-    specializationLabel: "Ophthalmologist",
-    qualification: "MBBS, DO, MS (Ophthalmology)",
-    experience: "11 years",
-    hospital: "Ispahani Islamia Eye Institute",
-    chamberAddress: "Farmgate, Dhaka",
-    chamberLocation: { lat: 23.7578, lng: 90.3920 },
-    chamberTime: "4:00 PM - 8:00 PM",
-    chamberDays: "Sat, Sun, Tue, Thu",
-    visitFee: 1000,
-    rating: 4.7,
-    totalPatients: 2800,
-    isAvailable: true,
-    currentSerial: 7,
-    maxSerial: 20,
-    image: "/doctors/doctor-woman.png",
-    verified: true,
-  },
-  {
-    id: 9,
-    name: "Dr. Imran Hossain",
-    specialization: "ent",
-    specializationLabel: "ENT Specialist",
-    qualification: "MBBS, DLO, MS (ENT)",
-    experience: "13 years",
-    hospital: "Ibn Sina Hospital",
-    chamberAddress: "Kalabagan, Dhaka",
-    chamberLocation: { lat: 23.7509, lng: 90.3765 },
-    chamberTime: "7:00 PM - 10:00 PM",
-    chamberDays: "Sun, Mon, Wed, Fri",
-    visitFee: 1200,
-    rating: 4.6,
-    totalPatients: 1900,
-    isAvailable: true,
-    currentSerial: 10,
-    maxSerial: 18,
-    image: "/doctors/doctor-man.png",
-    verified: true,
-  },
-  {
-    id: 10,
-    name: "Dr. Salma Khatun",
-    specialization: "general",
-    specializationLabel: "General Physician",
-    qualification: "MBBS, BCS (Health)",
-    experience: "8 years",
-    hospital: "Dhaka Medical College Hospital",
-    chamberAddress: "New Market, Dhaka",
-    chamberLocation: { lat: 23.7339, lng: 90.3845 },
-    chamberTime: "5:00 PM - 9:00 PM",
-    chamberDays: "Daily except Friday",
-    visitFee: 500,
-    rating: 4.4,
-    totalPatients: 6200,
-    isAvailable: true,
-    currentSerial: 22,
-    maxSerial: 40,
-    image: "/doctors/doctor-woman.png",
-    verified: false,
-  },
-]
+// Doctor UI type
+type DoctorType = {
+  id: string | number
+  name: string
+  specialization: string
+  specializationLabel: string
+  qualification?: string
+  experience?: string
+  hospital?: string
+  chamberAddress?: string
+  chamberLocation?: { lat: number; lng: number }
+  chamberTime?: string
+  chamberDays?: string
+  visitFee?: number
+  rating?: number
+  totalPatients?: number
+  isAvailable?: boolean
+  currentSerial?: number
+  maxSerial?: number
+  image?: string
+  verified?: boolean
+}
+
+// Local placeholder while loading from API
+const doctorsData: DoctorType[] = []
 
 interface BookingFormData {
   patientName: string
@@ -304,8 +116,11 @@ export default function DoctorsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedDate, setSelectedDate] = useState<Date>()
-  const [selectedDoctor, setSelectedDoctor] = useState<typeof doctorsData[0] | null>(null)
+  const [selectedDoctor, setSelectedDoctor] = useState<DoctorType | null>(null)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [doctors, setDoctors] = useState<any[]>(doctorsData)
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState<boolean>(true)
+  const [doctorsError, setDoctorsError] = useState<string | null>(null)
   const [isUnavailableAlert, setIsUnavailableAlert] = useState(false)
   const [isSuccessOpen, setIsSuccessOpen] = useState(false)
   const [serialNumber, setSerialNumber] = useState<number | null>(null)
@@ -316,15 +131,62 @@ export default function DoctorsPage() {
   })
   const [formErrors, setFormErrors] = useState<Partial<BookingFormData>>({})
   const [isMapOpen, setIsMapOpen] = useState(false)
-  const [mapDoctor, setMapDoctor] = useState<typeof doctorsData[0] | null>(null)
+  const [mapDoctor, setMapDoctor] = useState<DoctorType | null>(null)
 
-  const handleShowMap = (doctor: typeof doctorsData[0]) => {
+  const handleShowMap = (doctor: DoctorType) => {
     setMapDoctor(doctor)
     setIsMapOpen(true)
   }
 
+  useEffect(() => {
+    const loadDoctors = async () => {
+      setIsLoadingDoctors(true)
+      setDoctorsError(null)
+      try {
+        const params = new URLSearchParams()
+        // include all doctors (not only approved) to ensure visibility in the patient list
+        params.set("all", "1")
+        if (selectedCategory && selectedCategory !== "all") params.set("specialization", selectedCategory)
+        const res = await fetch(`/api/doctors?${params.toString()}`)
+        const json = await res.json()
+        if (!res.ok) throw new Error(json?.message || "Failed to load doctors")
+
+        // Map DB doctor shape to UI shape
+        const mapped = (json.doctors || []).map((d: any, idx: number) => ({
+          id: d._id || idx,
+          name: d.fullName || d.name || "",
+          specialization: d.specialization || "general",
+          specializationLabel: (d.specialization || "General").charAt(0).toUpperCase() + (d.specialization || "General").slice(1),
+          qualification: d.qualifications || "",
+          experience: d.yearsOfExperience ? `${d.yearsOfExperience} years` : "",
+          hospital: d.affiliatedHospital || d.hospital || "",
+          chamberAddress: d.address || "",
+          chamberLocation: d.location || { lat: 23.8103, lng: 90.4125 },
+          chamberTime: d.chamberTime || "",
+          chamberDays: d.chamberDays || "",
+          visitFee: d.consultationFee || d.consultation_fee || 0,
+          rating: d.rating || 4.5,
+          totalPatients: d.appointments || 0,
+          isAvailable: typeof d.isAppointmentOpen === 'boolean' ? d.isAppointmentOpen : true,
+          currentSerial: d.appointments || 0,
+          maxSerial: d.maxAppointmentsPerDay || d.maxAppointments || 20,
+          image: d.avatar || "/doctors/doctor-man.png",
+          verified: d.status === "approved",
+        }))
+
+        setDoctors(mapped)
+      } catch (err: any) {
+        setDoctorsError(err?.message || "Failed to load doctors")
+      } finally {
+        setIsLoadingDoctors(false)
+      }
+    }
+
+    loadDoctors()
+  }, [selectedCategory])
+
   // Filter doctors based on search and category
-  const filteredDoctors = doctorsData.filter((doctor) => {
+  const filteredDoctors = doctors.filter((doctor) => {
     const matchesSearch =
       doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doctor.hospital.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -333,7 +195,7 @@ export default function DoctorsPage() {
     return matchesSearch && matchesCategory
   })
 
-  const handleBookAppointment = (doctor: typeof doctorsData[0]) => {
+  const handleBookAppointment = (doctor: DoctorType) => {
     setSelectedDoctor(doctor)
     if (!doctor.isAvailable) {
       setIsUnavailableAlert(true)
@@ -371,7 +233,7 @@ export default function DoctorsPage() {
     if (!validateForm() || !selectedDoctor) return
 
     // Generate serial number (next in queue)
-    const newSerial = selectedDoctor.currentSerial + 1
+    const newSerial = (selectedDoctor.currentSerial ?? 0) + 1
     setSerialNumber(newSerial)
     setIsBookingOpen(false)
     setIsSuccessOpen(true)
@@ -441,6 +303,13 @@ export default function DoctorsPage() {
       <p className="text-sm text-muted-foreground">
         Showing {filteredDoctors.length} doctor{filteredDoctors.length !== 1 ? "s" : ""}
       </p>
+
+      {isLoadingDoctors && (
+        <div className="py-8 text-center text-sm text-muted-foreground">Loading doctors…</div>
+      )}
+      {doctorsError && (
+        <div className="py-4 rounded border border-destructive/20 bg-destructive/5 text-sm text-destructive">{doctorsError}</div>
+      )}
 
       {/* Doctors Grid */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -581,7 +450,7 @@ export default function DoctorsPage() {
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-muted">
                   <Image
-                    src={selectedDoctor.image}
+                    src={selectedDoctor.image ?? "/doctors/doctor-man.png"}
                     alt={selectedDoctor.name}
                     fill
                     className="object-cover"
@@ -750,7 +619,7 @@ export default function DoctorsPage() {
         <ChamberMapDialog
           isOpen={isMapOpen}
           onClose={() => setIsMapOpen(false)}
-          doctor={mapDoctor}
+          doctor={mapDoctor as any}
         />
       )}
     </div>

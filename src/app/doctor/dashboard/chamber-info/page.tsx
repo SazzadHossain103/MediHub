@@ -235,7 +235,7 @@ export default function ChamberInfoPage() {
 
       {/* Edit Chamber Dialog */}
       <Dialog open={editChamberOpen} onOpenChange={setEditChamberOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg overflow-auto ">
           <DialogHeader>
             <DialogTitle>Edit Chamber Information</DialogTitle>
             <DialogDescription>Update your clinic/chamber details</DialogDescription>
