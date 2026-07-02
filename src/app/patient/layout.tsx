@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/src/components/ui/sheet"
 import {
   LayoutDashboard,
   User,
+  Pill,
   MapPin,
   Calendar,
   FileText,
@@ -40,6 +41,8 @@ import { useAuthStore } from "./../../store/useAuthStore"
 const sidebarLinks = [
   { href: "/patient", label: "Overview", icon: LayoutDashboard },
   { href: "/patient/profile", label: "Medical Profile", icon: User },
+  { href: "/patient/prescriptions", label: "Prescriptions", icon: FileText },
+  { href: "/patient/medications", label: "Medications", icon: Pill },
   { href: "/patient/hospitals", label: "Nearby Hospitals", icon: MapPin },
   { href: "/patient/doctors", label: "Find Doctors", icon: Stethoscope },
   // { href: "/patient/nurses", label: "Find Nurses", icon: Cross },

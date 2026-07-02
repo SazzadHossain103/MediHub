@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
-import { Label } from "@/src/components/ui/label"
-import { toast } from "@/src/hooks/use-toast"
 import { useAuthStore } from "@/src/store/useAuthStore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { Switch } from "@/src/components/ui/switch"
 import { Badge } from "@/src/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar"
-import { Progress } from "@/src/components/ui/progress"
 import { ScrollArea } from "@/src/components/ui/scroll-area"
 import { Separator } from "@/src/components/ui/separator"
 import {
@@ -29,11 +24,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table"
+import { Input } from "@/src/components/ui/input"
 import {
   Users,
-  Calendar,
   Eye,
-  Upload,
   FileText,
   User,
   Phone,
@@ -50,6 +44,8 @@ import {
   Shield,
   MapPin,
   X,
+  Upload,
+  Calendar,
 } from "lucide-react"
 
 // Mock patient data
@@ -153,168 +149,12 @@ const mockPatients = [
   },
 ]
 
-// Types
-interface DateAppointments {
-  isOpen: boolean
-  maxAppointments: number
-  patients: { id: string; serialNo: number }[]
-}
-
-interface AppointmentData {
-  [date: string]: DateAppointments
-}
-
 export default function PatientsPage() {
-  // Appointments state
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date()
-    return today.toISOString().split("T")[0]
-  })
-  const [appointmentData, setAppointmentData] = useState<AppointmentData>(() => {
-    // Initialize with some mock data for today
-    const today = new Date().toISOString().split("T")[0]
-    return {
-      [today]: {
-        isOpen: true,
-        maxAppointments: 30,
-        patients: [
-          { id: "p1", serialNo: 1 },
-          { id: "p2", serialNo: 2 },
-          { id: "p3", serialNo: 3 },
-        ],
-      },
-    }
-  })
-
-  const { user, token, doctorToken } = useAuthStore()
-  const authToken = doctorToken || token
-  const [isSavingSettings, setIsSavingSettings] = useState(false)
-  const [settingsError, setSettingsError] = useState<string | null>(null)
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
-
-  // Load appointment settings from backend
-  useEffect(() => {
-    const loadAppointmentSettings = async () => {
-      if (!user?.id || !authToken) {
-        setIsLoadingSettings(false)
-        return
-      }
-
-      setIsLoadingSettings(true)
-      setSettingsError(null)
-
-      try {
-        const res = await fetch(`/api/doctor/${user.id}`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          throw new Error(data.message || data.error || "Unable to fetch appointment settings")
-        }
-
-        const today = new Date().toISOString().split("T")[0]
-        setAppointmentData((prev) => ({
-          ...prev,
-          [today]: {
-            ...prev[today],
-            isOpen: data.doctor.isAppointmentOpen ?? true,
-            maxAppointments: data.doctor.maxAppointmentsPerDay ?? 30,
-          },
-        }))
-      } catch (err: any) {
-        console.error("Failed to load appointment settings:", err)
-      } finally {
-        setIsLoadingSettings(false)
-      }
-    }
-
-    loadAppointmentSettings()
-  }, [user?.id, authToken])
-
   // Patient profile modal state
   const [selectedPatient, setSelectedPatient] = useState<typeof mockPatients[0] | null>(null)
   const [patientModalOpen, setPatientModalOpen] = useState(false)
   const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null)
 
-  // Get current date's appointment data
-  const currentDateData = appointmentData[selectedDate] || {
-    isOpen: false,
-    maxAppointments: 30,
-    patients: [],
-  }
-
-  const currentAppointments = currentDateData.patients.length
-  const maxAppointments = currentDateData.maxAppointments
-
-  // Update appointment data for selected date
-  const updateDateAppointments = (updates: Partial<DateAppointments>) => {
-    setAppointmentData((prev) => ({
-      ...prev,
-      [selectedDate]: {
-        ...currentDateData,
-        ...updates,
-      },
-    }))
-  }
-
-  const toggleAppointments = () => {
-    const newIsOpen = !currentDateData.isOpen
-    updateDateAppointments({ isOpen: newIsOpen })
-  }
-
-  const handleMaxAppointmentsChange = (value: string) => {
-    const max = parseInt(value) || 0
-    const updates: Partial<DateAppointments> = { maxAppointments: max }
-    // Auto-close if current >= max
-    if (currentAppointments >= max && max > 0) {
-      updates.isOpen = false
-    }
-    updateDateAppointments(updates)
-  }
-
-  const handleSaveAppointmentSettings = async () => {
-    if (!user?.id || !authToken) {
-      setSettingsError("Authentication required to save appointment settings.")
-      return
-    }
-
-    setSettingsError(null)
-    setIsSavingSettings(true)
-
-    try {
-      const res = await fetch(`/api/doctor/${user.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          isAppointmentOpen: currentDateData.isOpen,
-          maxAppointmentsPerDay: currentDateData.maxAppointments,
-        }),
-      })
-
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.message || data.error || "Failed to save appointment settings")
-      }
-
-      toast({
-        title: "Appointment settings saved",
-        description: "Your appointment availability and daily limit have been updated.",
-      })
-    } catch (err: any) {
-      setSettingsError(err?.message || "Could not save appointment settings")
-    } finally {
-      setIsSavingSettings(false)
-    }
-  }
-
-  // Patient profile handlers
   const handleViewPatient = (patientId: string) => {
     const patient = mockPatients.find((p) => p.id === patientId)
     if (patient) {
@@ -336,176 +176,56 @@ export default function PatientsPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Users className="h-6 w-6 text-primary" />
-          Patient Serial List
+          Patients
         </h1>
         <p className="text-muted-foreground mt-1">
-          Manage appointments and view patient profiles
+          View patient profiles and medical information
         </p>
       </div>
 
-      {/* Date Picker and Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Appointment Settings
-          </CardTitle>
-          <CardDescription>Manage appointments for the selected date</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {isLoadingSettings && (
-            <div className="text-center py-4 text-sm text-muted-foreground">
-              Loading appointment settings...
-            </div>
-          )}
-          {!isLoadingSettings && (
-            <>
-              {/* Date Picker */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <Label htmlFor="date" className="whitespace-nowrap">
-                  Select Date:
-                </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full sm:w-auto"
-                />
-              </div>
-
-              {/* Appointment Controls */}
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    id="appointments-toggle"
-                    checked={currentDateData.isOpen}
-                    onCheckedChange={toggleAppointments}
-                    disabled={currentAppointments >= maxAppointments && maxAppointments > 0}
-                  />
-                  <Label htmlFor="appointments-toggle" className="cursor-pointer">
-                    {currentDateData.isOpen ? (
-                      <Badge className="bg-green-600">Open for Appointments</Badge>
-                    ) : (
-                      <Badge variant="secondary">Closed for Appointments</Badge>
-                    )}
-                  </Label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Label htmlFor="max-appointments" className="whitespace-nowrap">
-                    Max Appointments:
-                  </Label>
-                  <Input
-                    id="max-appointments"
-                    type="number"
-                    min="0"
-                    value={maxAppointments}
-                    onChange={(e) => handleMaxAppointmentsChange(e.target.value)}
-                    className="w-24"
-                  />
-                </div>
-              </div>
-
-              {/* Appointment Count */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Appointments Filled</span>
-                  <span className="font-semibold">
-                    {currentAppointments} / {maxAppointments}
-                  </span>
-                </div>
-                <Progress
-                  value={maxAppointments > 0 ? (currentAppointments / maxAppointments) * 100 : 0}
-                  className="h-2"
-                />
-                {currentAppointments >= maxAppointments && maxAppointments > 0 && (
-                  <p className="text-sm text-destructive">
-                    Maximum appointments reached. Appointments automatically closed.
-                  </p>
-                )}
-              </div>
-
-              {settingsError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  {settingsError}
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleSaveAppointmentSettings}
-                  disabled={isSavingSettings || !authToken}
-                >
-                  {isSavingSettings ? "Saving..." : "Save Appointment Settings"}
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Patient Serial Table */}
+      {/* Patient List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            Patient Serial List
+            Patient Directory
           </CardTitle>
           <CardDescription>
-            Patients scheduled for{" "}
-            {new Date(selectedDate).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+            Select a patient to view full profile and medical history
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {currentDateData.patients.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No patients scheduled for this date.</p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">Serial No.</TableHead>
-                    <TableHead>Patient Name</TableHead>
-                    <TableHead>Phone Number</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient Name</TableHead>
+                  <TableHead>Phone Number</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mockPatients.map((patient) => (
+                  <TableRow key={patient.id}>
+                    <TableCell className="font-medium">{patient.name}</TableCell>
+                    <TableCell>{patient.phone}</TableCell>
+                    <TableCell>{patient.email}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewPatient(patient.id)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Profile
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentDateData.patients.map((appointment) => {
-                    const patient = mockPatients.find((p) => p.id === appointment.id)
-                    if (!patient) return null
-                    return (
-                      <TableRow key={appointment.id}>
-                        <TableCell className="font-medium">
-                          #{appointment.serialNo}
-                        </TableCell>
-                        <TableCell>{patient.name}</TableCell>
-                        <TableCell>{patient.phone}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewPatient(patient.id)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Profile
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

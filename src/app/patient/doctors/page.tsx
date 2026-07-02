@@ -35,6 +35,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/pop
 import { Calendar as CalendarComponent } from "@/src/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/src/lib/utils"
+import { useAuthStore } from "@/src/store/useAuthStore"
 import { 
   Search, 
   MapPin, 
@@ -50,8 +51,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Map,
-  Navigation,
-  ExternalLink
 } from "lucide-react"
 import dynamic from "next/dynamic"
 
@@ -59,7 +58,7 @@ import dynamic from "next/dynamic"
 const ChamberMapDialog = dynamic(() => import("@/src/components/chamber-map-dialog"), { 
   ssr: false,
   loading: () => (
-    <div className="flex h-[300px] items-center justify-center bg-muted rounded-lg">
+    <div className="flex h-75 items-center justify-center bg-muted rounded-lg">
       <div className="animate-pulse text-muted-foreground">Loading map...</div>
     </div>
   )
@@ -130,8 +129,11 @@ export default function DoctorsPage() {
     mobileNumber: "",
   })
   const [formErrors, setFormErrors] = useState<Partial<BookingFormData>>({})
+  const [bookingError, setBookingError] = useState<string | null>(null)
+  const [isBookingSaving, setIsBookingSaving] = useState(false)
   const [isMapOpen, setIsMapOpen] = useState(false)
   const [mapDoctor, setMapDoctor] = useState<DoctorType | null>(null)
+  const { token, user } = useAuthStore()
 
   const handleShowMap = (doctor: DoctorType) => {
     setMapDoctor(doctor)
@@ -201,8 +203,13 @@ export default function DoctorsPage() {
       setIsUnavailableAlert(true)
     } else {
       setIsBookingOpen(true)
-      setFormData({ patientName: "", age: "", mobileNumber: "" })
+      setBookingError(null)
       setFormErrors({})
+      setFormData({
+        patientName: user?.name || "",
+        age: "",
+        mobileNumber: "",
+      })
     }
   }
 
@@ -229,14 +236,57 @@ export default function DoctorsPage() {
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmitBooking = () => {
+  const handleSubmitBooking = async () => {
     if (!validateForm() || !selectedDoctor) return
+    if (!selectedDate) {
+      setBookingError("Please select a date before booking")
+      return
+    }
+    if (!token) {
+      setBookingError("You must be logged in to book an appointment")
+      return
+    }
 
-    // Generate serial number (next in queue)
-    const newSerial = (selectedDoctor.currentSerial ?? 0) + 1
-    setSerialNumber(newSerial)
-    setIsBookingOpen(false)
-    setIsSuccessOpen(true)
+    setIsBookingSaving(true)
+    setBookingError(null)
+
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          doctorId: selectedDoctor.id,
+          appointmentDate: selectedDate.toISOString(),
+          timeSlot: selectedDoctor.chamberTime || "TBD",
+          visitType: "new",
+          consultationMode: "in_person",
+          reasonForVisit: `Appointment booking for ${selectedDoctor.specializationLabel}`,
+          fee: selectedDoctor.visitFee || 0,
+          patientName: formData.patientName,
+          mobileNumber: formData.mobileNumber,
+          patientNote: `Patient age: ${formData.age}`,
+        }),
+      })
+
+      const json = await response.json()
+      if (!response.ok) {
+        throw new Error(json?.message || "Failed to book appointment")
+      }
+
+      setSerialNumber(json.appointment.serialNumber)
+      setIsBookingOpen(false)
+      setIsSuccessOpen(true)
+      setSelectedDoctor((prev) =>
+        prev ? { ...prev, currentSerial: (prev.currentSerial ?? 0) + 1 } : prev
+      )
+    } catch (error: any) {
+      setBookingError(error?.message || "Unable to book appointment")
+    } finally {
+      setIsBookingSaving(false)
+    }
   }
 
   return (
@@ -266,7 +316,7 @@ export default function DoctorsPage() {
             <Button
               variant={"outline"}
               className={cn(
-                "w-full sm:w-[240px] justify-start text-left font-normal",
+                "w-full sm:w-60 justify-start text-left font-normal",
                 !selectedDate && "text-muted-foreground"
               )}
             >
@@ -285,7 +335,7 @@ export default function DoctorsPage() {
         </Popover>
 
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full sm:w-[220px]">
+          <SelectTrigger className="w-full sm:w-55">
             <Stethoscope className="mr-2 h-4 w-4 text-muted-foreground" />
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
@@ -318,7 +368,7 @@ export default function DoctorsPage() {
             <CardHeader className="pb-4">
               <div className="flex gap-4">
                 {/* Doctor Image */}
-                <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
                   <Image
                     src={doctor.image}
                     alt={doctor.name}
@@ -351,7 +401,7 @@ export default function DoctorsPage() {
             <CardContent className="space-y-3 pb-4">
               {/* Hospital */}
               <div className="flex items-start gap-2">
-                <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium text-foreground">{doctor.hospital}</p>
                 </div>
@@ -359,7 +409,7 @@ export default function DoctorsPage() {
 
               {/* Chamber Address */}
               <div className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm text-muted-foreground">{doctor.chamberAddress}</p>
@@ -378,7 +428,7 @@ export default function DoctorsPage() {
 
               {/* Chamber Time */}
               <div className="flex items-start gap-2">
-                <Clock className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-foreground">{doctor.chamberTime}</p>
                   <p className="text-xs text-muted-foreground">{doctor.chamberDays}</p>
@@ -387,7 +437,7 @@ export default function DoctorsPage() {
 
               {/* Visit Fee */}
               <div className="flex items-center gap-2">
-                <Banknote className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <Banknote className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <p className="text-sm font-semibold text-secondary">
                   ৳{doctor.visitFee.toLocaleString()} <span className="font-normal text-muted-foreground">visit fee</span>
                 </p>
@@ -433,7 +483,7 @@ export default function DoctorsPage() {
 
       {/* Booking Dialog */}
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle>Book Appointment</DialogTitle>
             <DialogDescription>
@@ -471,6 +521,12 @@ export default function DoctorsPage() {
                   ৳{selectedDoctor.visitFee}
                 </div>
               </div>
+            </div>
+          )}
+
+          {bookingError && (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {bookingError}
             </div>
           )}
 
@@ -532,8 +588,8 @@ export default function DoctorsPage() {
             <Button variant="outline" onClick={() => setIsBookingOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitBooking}>
-              Confirm Booking
+            <Button onClick={handleSubmitBooking} disabled={isBookingSaving}>
+              {isBookingSaving ? "Booking..." : "Confirm Booking"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -568,7 +624,7 @@ export default function DoctorsPage() {
 
       {/* Success Dialog */}
       <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
-        <DialogContent className="sm:max-w-[400px] text-center">
+        <DialogContent className="sm:max-w-100 text-center">
           <div className="flex flex-col items-center py-4">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10">
               <CheckCircle2 className="h-8 w-8 text-secondary" />

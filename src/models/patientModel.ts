@@ -116,7 +116,7 @@ const patientSchema = new Schema(
         dosage: { type: String, default: null },
         prescribedBy: { type: String, default: null },
         startDate: { type: String, default: null },
-        endDate: { type: String, default: null },
+        stockStatus: { type: String, enum: ["In stock", "Out of stock"], default: "In stock" },
       },
     ],
 
@@ -135,6 +135,41 @@ const patientSchema = new Schema(
         provider: { type: String, default: null },
         hospital: { type: String, default: null },
         notes: { type: String, default: null },
+      },
+    ],
+
+    prescriptions: [
+      {
+        issue: { type: String, required: true },
+        doctor: { type: String, required: true },
+        imageUrl: { type: String, required: true },
+        createdAt: { type: String, required: true },
+        notes: { type: String, default: null },
+      },
+    ],
+
+    reports: [
+      {
+        _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
+        name: { type: String, required: true },
+        category: { type: String, required: true },
+        date: { type: String, required: true },
+        lab: { type: String, default: null },
+        doctor: { type: String, default: null },
+        status: { type: String, enum: ["ready", "processing"], default: "ready" },
+        fileUrl: { type: String, required: true },
+        results: [
+          {
+            parameter: { type: String, required: true },
+            value: { type: String, required: true },
+            unit: { type: String, required: true },
+            range: { type: String, required: true },
+            status: { type: String, enum: ["normal", "high", "low"], default: "normal" },
+          },
+        ],
+        notes: { type: String, default: null },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
       },
     ],
 

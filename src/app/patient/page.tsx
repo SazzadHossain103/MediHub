@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Badge } from "@/src/components/ui/badge"
 import { Button } from "@/src/components/ui/button"
@@ -20,57 +21,184 @@ import {
 
 import { useAuthStore } from "./../../store/useAuthStore";
 
-const upcomingAppointments = [
-  {
-    id: 1,
-    doctor: "Dr. Sarah Ahmed",
-    specialty: "Cardiologist",
-    hospital: "Square Hospital",
-    date: "May 5, 2026",
-    time: "10:30 AM",
-    status: "confirmed",
-  },
-  {
-    id: 2,
-    doctor: "Dr. Rahim Khan",
-    specialty: "General Physician",
-    hospital: "United Hospital",
-    date: "May 8, 2026",
-    time: "2:00 PM",
-    status: "pending",
-  },
-]
+type AppointmentOverview = {
+  _id: string
+  appointmentDate: string
+  timeSlot: string
+  status: string
+  doctorSnapshot: {
+    name: string
+    specialty?: string
+  }
+  hospitalSnapshot: {
+    name?: string
+  }
+}
 
-const recentReports = [
-  {
-    id: 1,
-    name: "Complete Blood Count",
-    date: "Apr 28, 2026",
-    status: "ready",
-  },
-  {
-    id: 2,
-    name: "Lipid Profile",
-    date: "Apr 25, 2026",
-    status: "ready",
-  },
-  {
-    id: 3,
-    name: "Thyroid Function Test",
-    date: "Apr 30, 2026",
-    status: "processing",
-  },
-]
+type ReportOverview = {
+  _id: string
+  name: string
+  date: string
+  status: "ready" | "processing"
+  category?: string
+  createdAt?: string
+}
 
-const medications = [
-  { name: "Metformin 500mg", dosage: "Twice daily", remaining: 15 },
-  { name: "Lisinopril 10mg", dosage: "Once daily", remaining: 22 },
-  { name: "Aspirin 75mg", dosage: "Once daily", remaining: 8 },
-]
+type MedicationOverview = {
+  _id: string
+  name: string
+  dosage?: string | null
+  prescribedBy?: string | null
+  startDate?: string | null
+  stockStatus?: string | null
+}
+
+const formatAppointmentDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+const formatReportDate = (dateString?: string) => {
+  if (!dateString) return "Recently added"
+
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return dateString
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+}
 
 export default function DashboardPage() {
+  const { user, token } = useAuthStore();
+  const [appointments, setAppointments] = useState<AppointmentOverview[]>([])
+  const [reports, setReports] = useState<ReportOverview[]>([])
+  const [medications, setMedications] = useState<MedicationOverview[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [reportsLoading, setReportsLoading] = useState(true)
+  const [medicationsLoading, setMedicationsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [reportsError, setReportsError] = useState<string | null>(null)
+  const [medicationsError, setMedicationsError] = useState<string | null>(null)
 
-  const { user } = useAuthStore();
+  useEffect(() => {
+    const loadAppointments = async () => {
+      if (!token) {
+        setError("Please log in to see your appointments.")
+        setAppointments([])
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const res = await fetch("/api/appointments", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data?.message || "Unable to load appointments")
+        }
+
+        setAppointments(data.appointments || [])
+      } catch (err: any) {
+        setError(err?.message || "Unable to load appointments")
+        setAppointments([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    const loadReports = async () => {
+      if (!token) {
+        setReports([])
+        setReportsLoading(false)
+        setReportsError("Please log in to see your reports.")
+        return
+      }
+
+      setReportsLoading(true)
+      setReportsError(null)
+
+      try {
+        const res = await fetch("/api/patient/reports", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data?.message || "Unable to load reports")
+        }
+
+        setReports((data.reports || []).slice(0, 3))
+      } catch (err: any) {
+        setReports([])
+        setReportsError(err?.message || "Unable to load reports")
+      } finally {
+        setReportsLoading(false)
+      }
+    }
+
+    const loadMedications = async () => {
+      if (!token) {
+        setMedications([])
+        setMedicationsLoading(false)
+        setMedicationsError("Please log in to see your medications.")
+        return
+      }
+
+      setMedicationsLoading(true)
+      setMedicationsError(null)
+
+      try {
+        const res = await fetch("/api/patient/medications", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data?.message || "Unable to load medications")
+        }
+
+        setMedications(data.medications || [])
+      } catch (err: any) {
+        setMedications([])
+        setMedicationsError(err?.message || "Unable to load medications")
+      } finally {
+        setMedicationsLoading(false)
+      }
+    }
+
+    loadAppointments()
+    loadReports()
+    loadMedications()
+  }, [token])
+
+  const now = new Date()
+  const upcomingAppointments = appointments
+    .filter((apt) => new Date(apt.appointmentDate) >= now)
+    .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime())
+
+  const upcomingCount = upcomingAppointments.length
+  const nextAppointment = upcomingAppointments[0]
+  const readyReportsCount = reports.filter((report) => report.status === "ready").length
+  const processingReportsCount = reports.filter((report) => report.status === "processing").length
 
   return (
     <div className="space-y-6">
@@ -101,7 +229,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -110,8 +238,14 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Next: May 5, 2026</p>
+            <div className="text-2xl font-bold">{isLoading ? "—" : upcomingCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {isLoading
+                ? "Loading next appointment..."
+                : nextAppointment
+                ? `Next: ${formatAppointmentDate(nextAppointment.appointmentDate)}`
+                : "No upcoming appointments"}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-secondary">
@@ -122,8 +256,12 @@ export default function DashboardPage() {
             <FileText className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">1 pending report</p>
+            <div className="text-2xl font-bold">{reportsLoading ? "—" : readyReportsCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {reportsLoading
+                ? "Loading reports..."
+                : `${processingReportsCount} pending report${processingReportsCount === 1 ? "" : "s"}`}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-chart-3">
@@ -134,11 +272,19 @@ export default function DashboardPage() {
             <Pill className="h-4 w-4 text-chart-3" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">1 refill needed soon</p>
+            <div className="text-2xl font-bold">
+              {medicationsLoading ? "—" : medications.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {medicationsLoading
+                ? "Loading medications..."
+                : medications.length === 0
+                ? "No active medications"
+                : `${medications.filter((med) => med.stockStatus === "Out of stock").length} out of stock`}
+            </p>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-chart-4">
+        {/* <Card className="border-l-4 border-l-chart-4">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Health Score
@@ -149,7 +295,7 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">85/100</div>
             <p className="text-xs text-muted-foreground">Good health status</p>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Main Content Grid */}
@@ -168,41 +314,55 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingAppointments.map((apt) => (
-              <div
-                key={apt.id}
-                className="flex items-start justify-between rounded-lg border border-border bg-muted/30 p-4"
-              >
-                <div className="flex gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                    <Stethoscope className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">{apt.doctor}</h4>
-                    <p className="text-sm text-muted-foreground">{apt.specialty}</p>
-                    <div className="mt-1 flex items-center gap-2 text-sm">
-                      <MapPin className="h-3 w-3" />
-                      <span>{apt.hospital}</span>
+            {isLoading ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+                  Loading appointments…
+                </CardContent>
+              </Card>
+            ) : upcomingAppointments.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+                  No upcoming appointments found.
+                </CardContent>
+              </Card>
+            ) : (
+              upcomingAppointments.map((apt) => (
+                <div
+                  key={apt._id}
+                  className="flex items-start justify-between rounded-lg border border-border bg-muted/30 p-4"
+                >
+                  <div className="flex gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                      <Stethoscope className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{apt.doctorSnapshot.name}</h4>
+                      <p className="text-sm text-muted-foreground">{apt.doctorSnapshot.specialty || "Doctor"}</p>
+                      <div className="mt-1 flex items-center gap-2 text-sm">
+                        <MapPin className="h-3 w-3" />
+                        <span>{apt.hospitalSnapshot.name || "Hospital"}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="text-right">
+                    <Badge
+                      variant={apt.status === "confirmed" ? "default" : "secondary"}
+                      className={apt.status === "confirmed" ? "bg-secondary text-secondary-foreground" : ""}
+                    >
+                      {apt.status === "confirmed" ? (
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                      ) : (
+                        <Clock className="mr-1 h-3 w-3" />
+                      )}
+                      {apt.status}
+                    </Badge>
+                    <p className="mt-2 text-sm font-medium">{formatAppointmentDate(apt.appointmentDate)}</p>
+                    <p className="text-xs text-muted-foreground">{apt.timeSlot}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <Badge
-                    variant={apt.status === "confirmed" ? "default" : "secondary"}
-                    className={apt.status === "confirmed" ? "bg-secondary text-secondary-foreground" : ""}
-                  >
-                    {apt.status === "confirmed" ? (
-                      <CheckCircle className="mr-1 h-3 w-3" />
-                    ) : (
-                      <Clock className="mr-1 h-3 w-3" />
-                    )}
-                    {apt.status}
-                  </Badge>
-                  <p className="mt-2 text-sm font-medium">{apt.date}</p>
-                  <p className="text-xs text-muted-foreground">{apt.time}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -220,44 +380,60 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentReports.map((report) => (
-              <div
-                key={report.id}
-                className="flex items-center justify-between rounded-lg border border-border p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                      report.status === "ready"
-                        ? "bg-secondary/10"
-                        : "bg-amber-100"
-                    }`}
-                  >
-                    <FileText
-                      className={`h-5 w-5 ${
-                        report.status === "ready"
-                          ? "text-secondary"
-                          : "text-amber-600"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{report.name}</h4>
-                    <p className="text-sm text-muted-foreground">{report.date}</p>
-                  </div>
-                </div>
-                {report.status === "ready" ? (
-                  <Button size="sm" variant="outline">
-                    View Report
-                  </Button>
-                ) : (
-                  <Badge variant="secondary" className="bg-amber-100 text-amber-700">
-                    <Clock className="mr-1 h-3 w-3" />
-                    Processing
-                  </Badge>
-                )}
+            {reportsLoading ? (
+              <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                Loading recent reports…
               </div>
-            ))}
+            ) : reportsError ? (
+              <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                {reportsError}
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                No test reports found yet.
+              </div>
+            ) : (
+              reports.map((report) => (
+                <div
+                  key={report._id}
+                  className="flex items-center justify-between rounded-lg border border-border p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                        report.status === "ready"
+                          ? "bg-secondary/10"
+                          : "bg-amber-100"
+                      }`}
+                    >
+                      <FileText
+                        className={`h-5 w-5 ${
+                          report.status === "ready"
+                            ? "text-secondary"
+                            : "text-amber-600"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{report.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {formatReportDate(report.date || report.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  {report.status === "ready" ? (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href="/patient/reports">View Report</Link>
+                    </Button>
+                  ) : (
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                      <Clock className="mr-1 h-3 w-3" />
+                      Processing
+                    </Badge>
+                  )}
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -268,87 +444,45 @@ export default function DashboardPage() {
             <CardDescription>Track your prescriptions and refills</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {medications.map((med, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between rounded-lg border border-border p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chart-3/10">
-                    <Pill className="h-5 w-5 text-chart-3" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{med.name}</h4>
-                    <p className="text-sm text-muted-foreground">{med.dosage}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  {med.remaining < 10 ? (
-                    <Badge variant="destructive" className="mb-1">
-                      <AlertCircle className="mr-1 h-3 w-3" />
-                      Low Stock
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="mb-1 bg-secondary/10 text-secondary">
-                      In Stock
-                    </Badge>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    {med.remaining} pills left
-                  </p>
-                </div>
+            {medicationsLoading ? (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-muted-foreground">
+                Loading medications...
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Frequently used services</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 py-6"
-              asChild
-            >
-              <Link href="/patient/hospitals">
-                <MapPin className="h-6 w-6 text-primary" />
-                <span>Find Hospital</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 py-6"
-              asChild
-            >
-              <Link href="/patient/tests">
-                <TestTube className="h-6 w-6 text-secondary" />
-                <span>Book Test</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 py-6"
-              asChild
-            >
-              <Link href="/patient/appointments">
-                <Calendar className="h-6 w-6 text-chart-3" />
-                <span>Appointments</span>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 py-6"
-              asChild
-            >
-              <Link href="/patient/profile">
-                <FileText className="h-6 w-6 text-chart-4" />
-                <span>My Profile</span>
-              </Link>
-            </Button>
+            ) : medications.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-muted-foreground">
+                No medications found. Add them from your profile.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {medications.slice(0, 3).map((medication) => (
+                  <div
+                    key={medication._id}
+                    className="flex items-center justify-between rounded-lg border border-border p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-chart-3/10">
+                        <Pill className="h-5 w-5 text-chart-3" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{medication.name}</h4>
+                        <p className="text-sm text-muted-foreground">{medication.dosage || "No dosage specified"}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge
+                        variant={medication.stockStatus === "Out of stock" ? "destructive" : "secondary"}
+                        className={medication.stockStatus === "Out of stock" ? "mb-1" : "mb-1 bg-secondary/10 text-secondary"}
+                      >
+                        {medication.stockStatus || "In stock"}
+                      </Badge>
+                      <p className="text-sm text-muted-foreground">
+                        {medication.startDate ? `Updated ${medication.startDate}` : "No update date"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

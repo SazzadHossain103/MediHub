@@ -15,12 +15,14 @@ import {
   LogOut,
   Menu,
   Stethoscope,
+  Calendar,
 } from "lucide-react"
 import { useAuthStore } from "@/src/store/useAuthStore"
 import { toast } from "@/src/hooks/use-toast"
 
 const sidebarItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/doctor/dashboard" },
+  { id: "appointments", label: "Appointments", icon: Calendar, href: "/doctor/dashboard/appointments" },
   { id: "chamber", label: "Chamber Info", icon: Building2, href: "/doctor/dashboard/chamber-info" },
   { id: "patients", label: "Patients", icon: Users, href: "/doctor/dashboard/patients" },
   { id: "settings", label: "Settings", icon: Settings, href: "/doctor/dashboard/settings" },
