@@ -138,7 +138,7 @@ export function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />
-                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role}/dashboard`}`} className="cursor-pointer">Profile </Link>
+                    <Link href={`/${user?.role === "patient" ? "patient" : `${user?.role === "super_admin" ? "admin" : user?.role}/dashboard`}`} className="cursor-pointer">Profile </Link>
                   </DropdownMenuItem>
                   {/* <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />

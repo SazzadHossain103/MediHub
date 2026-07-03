@@ -19,20 +19,6 @@ import {
 } from "lucide-react"
 import { useAuthStore } from "@/src/store/useAuthStore"
 
-// Mock patient data for today's list
-const mockTodayPatients = [
-  { id: "p1", serialNo: 1, name: "John Doe", phone: "+880 1712-345678" },
-  { id: "p2", serialNo: 2, name: "Sarah Khan", phone: "+880 1812-567890" },
-  { id: "p3", serialNo: 3, name: "Rahim Uddin", phone: "+880 1912-234567" },
-]
-
-// Mock dashboard stats
-const dashboardStats = {
-  totalPatientsTreated: 1247,
-  todayAppointments: 3,
-  maxAppointmentLimit: 30,
-  chamberTime: "9:00 AM - 5:00 PM",
-}
 
 type DoctorProfile = {
   _id: string
@@ -58,7 +44,10 @@ type DoctorProfile = {
 export default function DoctorDashboardPage() {
   const { user, token, doctorToken } = useAuthStore()
   const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null)
+  const [appointments, setAppointments] = useState<any[]>([])
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [appointmentsError, setAppointmentsError] = useState<string | null>(null)
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false)
   const authToken = doctorToken || token
 
   useEffect(() => {
@@ -86,6 +75,33 @@ export default function DoctorDashboardPage() {
 
     fetchDoctorProfile()
   }, [user?.id, authToken])
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!authToken) return
+      setAppointmentsLoading(true)
+      setAppointmentsError(null)
+
+      try {
+        const res = await fetch("/api/appointments", {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data.message || "Unable to load appointments")
+        }
+        setAppointments(data.appointments || [])
+      } catch (error: any) {
+        setAppointmentsError(error?.message || "Unable to load appointments")
+      } finally {
+        setAppointmentsLoading(false)
+      }
+    }
+
+    fetchAppointments()
+  }, [authToken])
 
   return (
     <div className="space-y-6">
@@ -176,7 +192,17 @@ export default function DoctorDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{dashboardStats.todayAppointments}</p>
+            <p className="text-3xl font-bold">
+              {appointments.filter((apt) => {
+                const appointmentDate = new Date(apt.appointmentDate)
+                const today = new Date()
+                return (
+                  appointmentDate.getDate() === today.getDate() &&
+                  appointmentDate.getMonth() === today.getMonth() &&
+                  appointmentDate.getFullYear() === today.getFullYear()
+                )
+              }).length}
+            </p>
           </CardContent>
         </Card>
 
@@ -217,32 +243,54 @@ export default function DoctorDashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {mockTodayPatients.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No patients scheduled for today.</p>
-            </div>
+          {appointmentsLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading patient list…</div>
+          ) : appointmentsError ? (
+            <div className="text-center py-8 text-destructive">{appointmentsError}</div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Serial No.</TableHead>
-                    <TableHead>Patient Name</TableHead>
-                    <TableHead>Contact Number</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockTodayPatients.map((patient) => (
-                    <TableRow key={patient.id}>
-                      <TableCell className="font-medium">#{patient.serialNo}</TableCell>
-                      <TableCell>{patient.name}</TableCell>
-                      <TableCell>{patient.phone}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            (() => {
+              const todayAppointments = appointments.filter((apt) => {
+                const appointmentDate = new Date(apt.appointmentDate)
+                const today = new Date()
+                return (
+                  appointmentDate.getDate() === today.getDate() &&
+                  appointmentDate.getMonth() === today.getMonth() &&
+                  appointmentDate.getFullYear() === today.getFullYear()
+                )
+              })
+
+              if (todayAppointments.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>No patients scheduled for today.</p>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-25">Serial No.</TableHead>
+                        <TableHead>Patient Name</TableHead>
+                        <TableHead>Contact Number</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {todayAppointments.map((appointment) => (
+                        <TableRow key={appointment._id}>
+                          <TableCell className="font-medium">#{appointment.serialNumber}</TableCell>
+                          <TableCell>{appointment.contactSnapshot?.name || "Patient"}</TableCell>
+                          <TableCell>{appointment.contactSnapshot?.phone || "N/A"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )
+            })()
           )}
         </CardContent>
       </Card>

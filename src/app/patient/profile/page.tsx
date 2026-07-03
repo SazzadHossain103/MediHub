@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
@@ -127,7 +127,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [historyList, setHistoryList] = useState(initialMedicalHistory)
   const [viewingRecord, setViewingRecord] = useState<typeof historyList[0] | null>(null)
-  const { user } = useAuthStore()
+  const { user, token, setUser } = useAuthStore()
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [isLoadingPatient, setIsLoadingPatient] = useState<boolean>(true)
   // Add History State
   const [isAddingHistory, setIsAddingHistory] = useState(false)
   const [newHistory, setNewHistory] = useState({
@@ -164,23 +166,153 @@ export default function ProfilePage() {
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0])
-      setEditProfileData({ ...editProfileData, avatar: url })
+      const file = e.target.files[0]
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const result = reader.result
+        if (typeof result === "string") {
+          setEditProfileData({ ...editProfileData, avatar: result })
+        }
+      }
+      reader.readAsDataURL(file)
     }
   }
 
-  const handleSaveMainProfile = (e: React.FormEvent) => {
-    e.preventDefault()
-    setPatient(editProfileData)
-    // Also sync the editPatient state if they decide to edit personal info later
-    setEditPatient(editProfileData)
-    setIsEditProfileOpen(false)
+  const mapPatientData = (p: any) => ({
+    name: p.fullName || p.name || user?.name || "",
+    avatar: p.avatar || "/placeholder-avatar.jpg",
+    dob: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split("T")[0] : (p.dob || "1980-01-01"),
+    gender: p.gender || "Male",
+    bloodType: p.bloodType || "O+",
+    phone: p.contactNumber || p.phone || "",
+    email: p.email || user?.email || "",
+    address: p.address || "",
+    emergencyContact: p.emergencyContact || { name: "", relation: "", phone: "" },
+    insuranceId: p.insuranceId || "",
+    medihubId: p.medihubId || "",
+    allergies: Array.isArray(p.allergies) ? p.allergies : initialAllergies,
+  })
+
+  const savePatientProfile = async (payload: Record<string, any>) => {
+    setApiError(null)
+    if (!user?.id || !token) {
+      setApiError("Authentication required to update profile")
+      return null
+    }
+
+    try {
+      const res = await fetch(`/api/patient/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setApiError(data?.message || data?.error || "Failed to update patient profile")
+        return null
+      }
+
+      return data
+    } catch (error: any) {
+      setApiError(error?.message || "Failed to update patient profile")
+      return null
+    }
   }
 
-  const handleSavePersonal = () => {
-    setPatient(editPatient)
-    setEditingPersonal(false)
+  const handleSaveMainProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const payload = {
+      name: editProfileData.name,
+      fullName: editProfileData.name,
+      dateOfBirth: editProfileData.dob,
+      gender: editProfileData.gender,
+      contactNumber: editProfileData.phone,
+      email: editProfileData.email,
+      address: editProfileData.address,
+      bloodType: editProfileData.bloodType,
+      emergencyContact: editProfileData.emergencyContact,
+      avatar: editProfileData.avatar,
+    }
+
+    const data = await savePatientProfile(payload)
+    if (!data) return
+
+    const updatedPatient = data.patient ? mapPatientData(data.patient) : editProfileData
+    setPatient(updatedPatient)
+    setEditPatient(updatedPatient)
+    setEditProfileData(updatedPatient)
+    setIsEditProfileOpen(false)
+
+    if (user && editProfileData.name !== user.name) {
+      setUser({ ...user, name: editProfileData.name })
+    }
+    if (user && editProfileData.email !== user.email) {
+      setUser({ ...user, email: editProfileData.email })
+    }
   }
+
+  const handleSavePersonal = async () => {
+    const payload = {
+      contactNumber: editPatient.phone,
+      email: editPatient.email,
+      address: editPatient.address,
+      emergencyContact: editPatient.emergencyContact,
+    }
+
+    const data = await savePatientProfile(payload)
+    if (!data) return
+
+    const updatedPatient = data.patient ? mapPatientData(data.patient) : editPatient
+    setPatient(updatedPatient)
+    setEditPatient(updatedPatient)
+    setEditingPersonal(false)
+
+    if (user && editPatient.email !== user.email) {
+      setUser({ ...user, email: editPatient.email })
+    }
+  }
+
+  useEffect(() => {
+    const loadPatient = async () => {
+      if (!user?.id || !token) {
+        setIsLoadingPatient(false)
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/patient/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setApiError(data?.message || data?.error || "Failed to load patient data")
+          setIsLoadingPatient(false)
+          return
+        }
+
+        const mapped = mapPatientData(data.patient || {})
+        const allergies = Array.isArray(data.patient?.allergies) ? data.patient.allergies : initialAllergies
+
+        setPatient(mapped)
+        setEditPatient(mapped)
+        setEditProfileData(mapped)
+        setAllergyList(allergies)
+        setEditAllergyList(allergies)
+      } catch (err: any) {
+        setApiError(err?.message || "Failed to load patient data")
+      } finally {
+        setIsLoadingPatient(false)
+      }
+    }
+
+    loadPatient()
+  }, [user?.id, token])
+
   const handleCancelPersonal = () => {
     setEditPatient(patient)
     setEditingPersonal(false)
@@ -191,8 +323,20 @@ export default function ProfilePage() {
   const [editingAllergies, setEditingAllergies] = useState(false)
   const [editAllergyList, setEditAllergyList] = useState(initialAllergies)
 
-  const handleSaveAllergies = () => {
-    setAllergyList(editAllergyList.filter(a => a.name.trim()))
+  const handleSaveAllergies = async () => {
+    const payload = {
+      allergies: editAllergyList.filter((a) => a.name.trim()),
+    }
+
+    const data = await savePatientProfile(payload)
+    if (!data) return
+
+    const savedAllergies = Array.isArray(data.patient?.allergies)
+      ? data.patient.allergies
+      : payload.allergies
+
+    setAllergyList(savedAllergies)
+    setEditAllergyList(savedAllergies)
     setEditingAllergies(false)
   }
   const handleCancelAllergies = () => {
@@ -314,6 +458,12 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {apiError ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {apiError}
+        </div>
+      ) : null}
+
       {/* Security Badge */}
       <Card className="border-secondary/30 bg-secondary/5">
         <CardContent className="flex items-center gap-3 p-4">
@@ -369,7 +519,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Email</Label>
-                      <Input value={user?.email} onChange={(e) => setEditPatient({ ...editPatient, email: e.target.value })} className="h-9" />
+                      <Input value={editPatient.email} onChange={(e) => setEditPatient({ ...editPatient, email: e.target.value })} className="h-9" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Address</Label>
@@ -379,7 +529,7 @@ export default function ProfilePage() {
                     <p className="text-xs font-medium text-muted-foreground">Emergency Contact</p>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Name</Label>
-                      <Input value={user?.name} onChange={(e) => setEditPatient({ ...editPatient, emergencyContact: { ...editPatient.emergencyContact, name: e.target.value } })} className="h-9" />
+                      <Input value={editPatient.emergencyContact.name} onChange={(e) => setEditPatient({ ...editPatient, emergencyContact: { ...editPatient.emergencyContact, name: e.target.value } })} className="h-9" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Relation</Label>
